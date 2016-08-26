@@ -212,7 +212,7 @@ raw::sweeper_crdc_pads::integrate(std::vector< std::vector<short> >& data,
 	    break;
 
 	    case 1:
-	    // CRDC 2 - average over samples
+	    // CRDC 2 - average over samples - THR 17 August 2016
 	      if(data[q][s] != 0)
 	      {
 	        raw[q] += data[q][s];
@@ -361,7 +361,7 @@ raw::sweeper_crdc::unpack_raw_data(unsigned short* pCrdc, unsigned short id)
   pad.integrate(m_data, m_sampleWidth,id);
   // force CRDC 1 sample_width = 1 so we can use same
   // calibrate function for both detectors THR 8/22/2016
-  if(id==0){sample_width=1;}
+  if(id==0){sample_width=1;}// cout << "id=0; sample_width set to 1" << endl;}
 
 
   if (!mes1 || !mes2 || !mes3 || !mes4) failed++;
@@ -489,7 +489,7 @@ cal::sweeper_crdc_pads::calibrate(const raw::sweeper_crdc_pads& rw,
 	    // to keep this function the same between CRDCs 1 & 2
 	    // force the sample width to 1 for CRDC1 in the
 	    // raw::sweeper_crdc_pads::unpack_raw_data() function
-	    cout << "sw = " << sw << endl;
+//	    cout << "sw = " << sw << endl;
             cal[i] = double((rw.raw[i] / sw) - v.ped[i]);
 //            cal[i] = double((rw.raw[i]) - v.ped[i]);
             //cal[i] = double(rw.raw[i] - (v.ped[i] * sw)); - JKS, 24 July 2012
@@ -1536,7 +1536,7 @@ raw::sweeper_segtargadc::unpack(unsigned short* pHs)
 {
   
       // Segtargadc packet
-      unsigned short length,ch,id;
+      unsigned short length,ch;// unused variable: ,id;
       length = *(pHs-2); 
       length -= 2;
 //      3id = *pHs; ++pHs;
@@ -1560,26 +1560,29 @@ raw::sweeper_segtargadc::unpack(unsigned short* pHs)
 void
 var::sweeper_segtargadc::write(const char* name, FILE* f)
 {
-  for(int i=0; i< SEGTARG_CH; ++i)
+  for(int i=0; i<4; ++i)
+  {
+    for(int j=0; j<4; j++)
     {
-      fprintf(f, "%s.slope[%i] = %f;\n", name, i, slope[i]);
-      fprintf(f, "%s.offset[%i] = %f;\n", name, i, offset[i]);
+      fprintf(f, "st.cnr_slope[%i] = %f;\n", i, cnr_slope[i][j]);
+      fprintf(f, "st.cnr_offset[%i] = %f;\n", i, cnr_offset[i][j]);
     }
+  }
 };
 
 
 void
 cal::sweeper_segtargadc::reset()
 {
-  for(int i=0; i< SEGTARG_CH; ++i)
-    {
-      cal[i] = -1;
-    }
   for(int i=0; i<4; i++)
-    {anode[i] = -1;
+    {
+    anode[i] = -1;
+    x[i] = -1;
+    y[i] = -1;
+    ecal[i] = -1;
     for (int j=0; j<4; j++)
     	{
-	corners[i][j] = -1;
+	corner[i][j] = -1;
    	}
     
     }
@@ -1590,39 +1593,32 @@ void
 cal::sweeper_segtargadc::calibrate(const raw::sweeper_segtargadc& rw,
 				    const var::sweeper_segtargadc& v)
 {
-for(int i=0; i< SEGTARG_CH; ++i)
-  {
-  if(is_valid(rw.raw[i]) && is_valid(v.slope[i]))
-    {
-	cal[i]  = rw.raw[i] * v.slope[i] + v.offset[i];
-    }
-  }
 // dump calibration results into anode and corner arrays
 //anode[0]=cal[15];// anode for detector during test
-anode[0]=cal[16];// first detector that beam hits
-anode[1]=cal[20];
-anode[2]=cal[24];
-anode[3]=cal[31];// last detector that beam hits
+anode[0]=double(rw.raw[16]);// first detector that beam hits
+anode[1]=double(rw.raw[20]);
+anode[2]=double(rw.raw[24]);
+anode[3]=double(rw.raw[31]);// last detector that beam hits
 
+// corners for detector 0: LU, RU, RD, LD
+for(int i=0; i<4; i++)
+{
+  corner[0][i]=double(rw.raw[i+4]) * v.cnr_slope[0][i+4] + v.cnr_offset[0][i+4];
+}
 // corners for detector 1: LU, RU, RD, LD
 for(int i=0; i<4; i++)
 {
-  corners[0][i]=cal[i+4];
+  corner[1][i]=double(rw.raw[i]) * v.cnr_slope[1][i] + v.cnr_offset[1][i];
 }
 // corners for detector 2: LU, RU, RD, LD
 for(int i=0; i<4; i++)
 {
-  corners[1][i]=cal[i];
+  corner[2][i]=double(rw.raw[i+12]) * v.cnr_slope[2][i+12] + v.cnr_offset[2][i+12];
 }
 // corners for detector 3: LU, RU, RD, LD
 for(int i=0; i<4; i++)
 {
-  corners[0][i]=cal[i+12];
-}
-// corners for detector 4: LU, RU, RD, LD
-for(int i=0; i<4; i++)
-{
-  corners[0][i]=cal[i+8];
+  corner[3][i]=double(rw.raw[i+8]);// * v.cnr_slope[3][i+8] + v.cnr_offset[3][i+8];
 }
 
 };
@@ -2441,7 +2437,7 @@ raw::sweeper::reset()
   thin.reset();
   tdc.reset();
 #ifdef __WITH_SEGTARG
-  segtargadc.reset();
+  st.reset();
 #endif
 #ifdef __WITH_HODOSCOPE
   hodo.reset();
@@ -2519,7 +2515,7 @@ raw::sweeper::unpack(unsigned short* pS)
 
         case SWEEPER_FP_TA_SEG_PACKET:
 #ifdef __WITH_SEGTARG
-          segtargadc.unpack(pS);
+          st.unpack(pS);
 	  pS += packetlength-2;
 	  break;
 #endif
@@ -2635,7 +2631,7 @@ var::sweeper::write(const char* name, const char* filename)
   tmp = name; tmp+=".ic"      ; ic.write(tmp.c_str(),      fout);
   tmp = name; tmp+=".thin"    ; thin.write(tmp.c_str(),    fout);
 #ifdef __WITH_SEGTARG
-  tmp = name; tmp+=".segtargadc"    ; segtargadc.write(tmp.c_str(),    fout);
+  tmp = name; tmp+=".st"    ; st.write(tmp.c_str(),    fout);
 #endif
 #ifdef __WITH_HODOSCOPE
   tmp = name; tmp+=".hodo"    ; hodo.write(tmp.c_str(),    fout);
@@ -2664,7 +2660,7 @@ cal::sweeper::reset()
   ic.reset();
   thin.reset();
 #ifdef __WITH_SEGTARG
-  segtargadc.reset();
+  st.reset();
 #endif
 #ifdef __WITH_HODOSCOPE
   hodo.reset();
@@ -2757,7 +2753,7 @@ cal::sweeper::calibrate(const raw::sweeper* rw,
 #endif
 
 #ifdef __WITH_SEGTARG
-  segtargadc.calibrate(rw->segtargadc,v.segtargadc);
+  st.calibrate(rw->st,v.st);
 #endif
 
 #ifdef __WITH_HODOSCOPE

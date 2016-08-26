@@ -26,12 +26,14 @@ namespace raw {
   public:
     short monapattern;
     short monahits;
-    short monacount_pattern[2];
+//    short monacount_pattern[2];
+    short monacount_pattern[3];// changed b/c loop in mona.cc line 18 expects 3 elements
     short monatimestamp[4];
 
     short lisapattern;
     short lisahits;
-    short lisacount_pattern[2];
+//    short lisacount_pattern[2];
+    short lisacount_pattern[3];// changed b/c loop in mona.cc line 24 expects 3 elements
     short lisatimestamp[4];
   public:
     void reset();

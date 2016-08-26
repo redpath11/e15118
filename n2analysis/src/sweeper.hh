@@ -213,7 +213,7 @@ namespace raw {
     sweeper_ion_chamber     ic;
     sweeper_fp_scint        thin;
 #ifdef __WITH_SEGTARG
-    sweeper_segtargadc      segtargadc;
+    sweeper_segtargadc      st;
 #endif
 #ifdef __WITH_HODOSCOPE
     sweeper_hodoscope	    hodo;
@@ -417,8 +417,24 @@ namespace var {
   class sweeper_segtargadc
   {
   public:
-   double slope [SEGTARG_CH];
-   double offset [SEGTARG_CH];
+   // slopes and offsets for corners
+   // [det:0,1,2,3][corner:LU,RU,RD,LD]
+   // det0 is the first Si the beam sees
+   double cnr_slope  [4][4];
+   double cnr_offset [4][4];
+   // slopes and offsets for position
+   // calculations after the corners have
+   // been gainmatched; [det0,1,2,3]
+   // det0 is the first Si the beam sees
+   double x_slope [4];
+   double x_offset[4];
+   double y_slope [4];
+   double y_offset[4];
+   // slopes and offsets for the energy
+   // calibration: [det0,1,2,3]
+   // det0 is the first Si the beam sees
+   double e_slope [4];
+   double e_offset[4];
 
   public:
    void write(const char* name, FILE* f);
@@ -500,7 +516,7 @@ namespace var {
     sweeper_ion_chamber     ic;
     sweeper_fp_scint        thin;
 #ifdef __WITH_HODOSCOPE
-    sweeper_segtargadc      segtargadc;//HL 12/21/2015
+    sweeper_segtargadc      st;//HL 12/21/2015
 #endif
 
 #ifdef __WITH_HODOSCOPE
@@ -538,7 +554,7 @@ namespace cal {
   {
   public:
     int    fcpy[FPCRDC_PADS];//flag events with duplicate pads THR 4 August 2016
-    int    smpls[FPCRDC_PADS][4];// write out all samples THR 16 August 2016
+//    int    smpls[FPCRDC_PADS][4];// write out all samples THR 16 August 2016
     double cal[FPCRDC_PADS];
 
   public:
@@ -673,15 +689,22 @@ namespace cal {
   class sweeper_segtargadc
   {
   public:
-    double cal[SEGTARG_CH];
-    // added 6/28/2016
+//    double cal[SEGTARG_CH];
+    // arrays to hold raw anode, gainmatched
+    // corner, calculated x,y and calibrated
+    // energy signals
     double anode[4];
-    double corners[4][4];
+    double corner[4][4];
+    double x[4];
+    double y[4];
+    double ecal[4];
 
   public:
     void reset();
     void calibrate(const raw::sweeper_segtargadc& rw,
 		   const var::sweeper_segtargadc& v);
+//    void position_correct(const var::sweeper_segtargadc& v);
+//    void energy_calibration(const var::sweeper_segtargadc& v);
   };
 
 #endif
@@ -866,7 +889,7 @@ namespace cal {
     sweeper_ion_chamber ic;
     sweeper_fp_scint thin;
 #ifdef __WITH_SEGTARG
-    sweeper_segtargadc segtargadc;
+    sweeper_segtargadc st;
 #endif
 #ifdef __WITH_HODOSCOPE
     sweeper_hodoscope hodo;
