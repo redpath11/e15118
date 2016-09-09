@@ -201,9 +201,10 @@ raw::sweeper_crdc_pads::integrate(std::vector< std::vector<short> >& data,
 	    {
 	    case 0:
 	    // CRDC 1 - don't average over samples, take largest one - THR 17 August 2016
-	      if(data[q][s] != 0 && data[q][s] > raw[q])
+	    // normal treatment for CRDC 1 30 August 2016
+	      if(data[q][s] != 0)// && data[q][s] > raw[q])
 	      {
-	        raw[q] = data[q][s];
+	        raw[q] += data[q][s];//
 	        ++nsamples[q];
 	      }
 #if(__UNPACK_SAMPLES)
@@ -229,6 +230,11 @@ raw::sweeper_crdc_pads::integrate(std::vector< std::vector<short> >& data,
 	    }
 	}
       if(raw[q] == 0) raw[q] = -1;
+    }
+  // loop through pads again to normalize by the number of samples - THR 1 September 2016
+  for (int qq=0; qq< FPCRDC_PADS; qq++)
+    {
+      if(nsamples[qq]!=0 && raw[qq]!=-1){ raw[qq] = raw[qq] / nsamples[qq];}
     }
 };
 
@@ -292,11 +298,13 @@ raw::sweeper_crdc::unpack_raw_data(unsigned short* pCrdc, unsigned short id)
 	if (i == 0) break;
       }
 
-    if (sample< m_sampleBegin || sample >m_sampleBegin + FPCRDC_MAX_WIDTH) 
+    if ((sample< m_sampleBegin || sample >m_sampleBegin + FPCRDC_MAX_WIDTH) && (data[0]!=0 && data[1]!=0)) 
       {
 #if(__SWEEPER_DEBUG)	
-	  fprintf(stderr, "Warning in Crdc unpack: inconsistent sample number: %d (first: %d)\n",
-		  sample, m_sampleBegin);
+//	  fprintf(stderr, " %d  %d  %d  %d \n",
+//		  id+1, channel, sample, m_sampleBegin);// THR 31 August 2016
+	  fprintf(stderr, "Warning in Crdc %d unpack: inconsistent sample number, ch %d: %d (first: %d \n",
+		  id+1, channel, sample, m_sampleBegin);// THR 31 August 2016
 #endif
 	mes1 = false;
 	continue;
@@ -305,8 +313,8 @@ raw::sweeper_crdc::unpack_raw_data(unsigned short* pCrdc, unsigned short id)
     if (sample < previous_sample)
       {
 #if(__SWEEPER_DEBUG)
-	  fprintf(stderr, "Warning in Crdc unpack: sample number lower than previous: %d (previous: %d)\n",
-		  sample, previous_sample);
+	  fprintf(stderr, "Warning in Crdc %d unpack: sample number lower than previous, ch %d: %d (previous: %d)\n",
+		  id+1, channel, sample, previous_sample);// THR 1 Sept 2016
 #endif
 	mes2 = false;
 	continue;
@@ -352,6 +360,15 @@ raw::sweeper_crdc::unpack_raw_data(unsigned short* pCrdc, unsigned short id)
 #endif
 	    mes4 = false;
 	  }
+	if ((sample < m_sampleBegin || sample>m_sampleBegin + FPCRDC_MAX_WIDTH) && id==1 && data[j]!=0)
+	  {
+#if(__SWEEPER_DEBUG)	
+	  fprintf(stderr, " %d  %d  %d  %d  %d  %d \n",
+		  id+1, channel, ch, sample, m_sampleBegin, data[j]);// THR 31 August 2016
+//	  fprintf(stderr, "Warning in Crdc %d unpack: inconsistent sample number, ch %d: %d (first: %d \n",
+//		  id+1, channel, sample, m_sampleBegin);// THR 31 August 2016
+#endif
+          }
       }
     m_sampleWidth = sample - m_sampleBegin + 1;
     }
@@ -361,7 +378,7 @@ raw::sweeper_crdc::unpack_raw_data(unsigned short* pCrdc, unsigned short id)
   pad.integrate(m_data, m_sampleWidth,id);
   // force CRDC 1 sample_width = 1 so we can use same
   // calibrate function for both detectors THR 8/22/2016
-  if(id==0){sample_width=1;}// cout << "id=0; sample_width set to 1" << endl;}
+  // if(id==0){sample_width=1;}// cout << "id=0; sample_width set to 1" << endl;}
 
 
   if (!mes1 || !mes2 || !mes3 || !mes4) failed++;
@@ -489,11 +506,17 @@ cal::sweeper_crdc_pads::calibrate(const raw::sweeper_crdc_pads& rw,
 	    // to keep this function the same between CRDCs 1 & 2
 	    // force the sample width to 1 for CRDC1 in the
 	    // raw::sweeper_crdc_pads::unpack_raw_data() function
+	    // *** 9/1/2016 THR ***
+	    // SHOULD NOT BE SAMPLE WIDTH (sw) this does not
+	    // properly normalize the raw charge
+	    // instead i normalize by nsamples[q] in
+	    // raw::sweeper_crdc_pads::integrate(...)
+	    // so only pedestal subtraction takes place here
 //	    cout << "sw = " << sw << endl;
-            cal[i] = double((rw.raw[i] / sw) - v.ped[i]);
-//            cal[i] = double((rw.raw[i]) - v.ped[i]);
+//            cal[i] = double((rw.raw[i] / sw) - v.ped[i]);
+            cal[i] = double((rw.raw[i]) - v.ped[i]);
             //cal[i] = double(rw.raw[i] - (v.ped[i] * sw)); - JKS, 24 July 2012
-	    //search for duplicated pads - THR, 4 August 2016
+	    /* search for duplicated pads - THR, 4 August 2016 */
 	    fcpy[i]=0;
 	    for(int k=i-10;k<i+10;k++)
 	    {
