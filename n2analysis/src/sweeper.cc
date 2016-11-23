@@ -236,7 +236,44 @@ raw::sweeper_crdc_pads::integrate(std::vector< std::vector<short> >& data,
     {
       if(nsamples[qq]!=0 && raw[qq]!=-1){ raw[qq] = raw[qq] / nsamples[qq];}
     }
+  /* interchange raw[pad] contents for pads CRDC 1 56-63: THR 9 Sept 2016
+  if(id==0)
+  {
+    int mirror = 63;
+    int qq = 56;
+    while (qq<mirror)
+    {
+      short tmp1 = raw[qq];
+      short tmp2 = raw[mirror];
+
+      raw[qq] = tmp2; raw[mirror] = tmp1;
+      ++qq;
+      --mirror;
+    }
+  }
+
+ */
+
+  /* interchange raw[pad] contents for pads CRDC 1 72-79: THR 9 Sept 2016
+  if(id==0)
+  {
+    int mirror = 79;
+    int qq = 72;
+    while (qq<mirror)
+    {
+      short tmp1 = raw[qq];
+      short tmp2 = raw[mirror];
+
+      raw[qq] = tmp2; raw[mirror] = tmp1;
+      ++qq;
+      --mirror;
+    }
+  }
+ */
+
 };
+
+
 
 void
 raw::sweeper_crdc::unpack_raw_data(unsigned short* pCrdc, unsigned short id)
@@ -567,7 +604,8 @@ cal::sweeper_crdc::reset()
 };
 
 void
-cal::sweeper_crdc::gravity_fit(const var::sweeper_crdc& v)
+cal::sweeper_crdc::gravity_fit(const var::sweeper_crdc& v,
+                               const int id)
 {
   try {
     double maxpad = 0;
@@ -594,6 +632,148 @@ cal::sweeper_crdc::gravity_fit(const var::sweeper_crdc& v)
       padmax = -1;
       return;
     }
+
+    /* switch on padmax to fix problem pads THR 4 Oct 2016:
+     *   crdc1.padmax = 64,65: mirror pads 64 - 71
+     *   crdc1.padmax = 67 - 68: suprress 72 - 79
+     *                  69: suppress 73 - 79
+     *                  70: suppress 74 - 79
+     *                  71: suppress > 76
+     *                  72: mirror 75 - 79
+     *                  73: suppress 72 - 79
+     *                  */
+
+/*
+    if(padmax>=64 && padmax<=65 && id==0)
+    {
+
+      int mirror = 71;
+      int qq = 64;
+      while (qq<mirror)
+      {
+        double tmp1 = pad.cal[qq];
+        double tmp2 = pad.cal[mirror];
+//        if(qq<75){ tmp1 = -1.0; }
+
+        pad.cal[qq] = tmp2; pad.cal[mirror] = tmp1;
+        ++qq;
+        --mirror;
+      }
+    }
+*/      
+    if(padmax>=67 && padmax<=68 && id==0)
+    {
+      for(int sp=72;sp<80;sp++){ pad.cal[sp]=-1; }
+    }
+    if(padmax==69 && id==0)
+    {
+      for(int sp=73;sp<80;sp++){ pad.cal[sp]=-1; }
+    }
+    if(padmax==70 && id==0)
+    {
+      for(int sp=74;sp<80;sp++){ pad.cal[sp]=-1; }
+    }
+    if(padmax==71 && id==0)
+    {
+      for(int sp=76;sp<100;sp++){ pad.cal[sp]=-1; }
+    }
+    /*
+    if(padmax==72 && id==0)
+    {
+
+      int mirror = 79;
+      int qq = 75;
+      while (qq<mirror)
+      {
+        double tmp1 = pad.cal[qq];
+        double tmp2 = pad.cal[mirror];
+//        if(qq<75){ tmp1 = -1.0; }
+
+        pad.cal[qq] = tmp2; pad.cal[mirror] = tmp1;
+        ++qq;
+        --mirror;
+      }
+    }
+    if(padmax==73 && id==0)
+    {
+      for(int sp=72;sp<80;sp++){ pad.cal[sp]=-1; }
+    }
+    // Redo padmax search: THR 21 Sept 2016 
+    maxpad=0; bad=0; padmax=0;
+    for (int i=1; i< FPCRDC_PADS-1; ++i) {
+      // reject bad pads stored in the badpad array
+      bad = 0;
+      for (int j=0; j< v.badpads; ++j) {
+         if (i == v.badpad[j]) bad = 1;
+      }
+      if (bad == 0) { 
+        if(is_valid(pad.cal[i]) && is_valid(pad.cal[i-1]) && is_valid(pad.cal[i+1])) {
+          if(pad.cal[i-1] > 0 && pad.cal[i+1] > 0 && pad.cal[i] > maxpad) {
+	      maxpad = pad.cal[i];
+	      padmax = i;
+	    }
+  	  }
+        }
+      }
+    */
+    /* interchange cal[pad] contents for CRDC 1 pads 72-79: THR 21 Sept 2016 
+    if(padmax>=71 && padmax<=74 && id==0)
+    {
+
+      int mirror = 79;
+      int qq = 72;
+      while (qq<mirror)
+      {
+        double tmp1 = pad.cal[qq];
+        double tmp2 = pad.cal[mirror];
+        if(qq<75){ tmp1 = -1.0; }
+
+        pad.cal[qq] = tmp2; pad.cal[mirror] = tmp1;
+        ++qq;
+        --mirror;
+      }
+      
+      // Redo padmax search: THR 21 Sept 2016 
+      maxpad=0; bad=0; padmax=0;
+      for (int i=1; i< FPCRDC_PADS-1; ++i) {
+        // reject bad pads stored in the badpad array
+        bad = 0;
+        for (int j=0; j< v.badpads; ++j) {
+	  if (i == v.badpad[j]) bad = 1;
+        }
+        if (bad == 0) { 
+	  if(is_valid(pad.cal[i]) && is_valid(pad.cal[i-1]) && is_valid(pad.cal[i+1])) {
+	    if(pad.cal[i-1] > 0 && pad.cal[i+1] > 0 && pad.cal[i] > maxpad) {
+	      maxpad = pad.cal[i];
+	      padmax = i;
+	    }
+  	  }
+        }
+      }
+
+    }
+*/
+
+    /* add some noise to fit result when crdc1.padmax == 62 */
+
+    /* interchange cal[pad] contents for CRDC 1 pads 72-79: THR 14 Sept 2016
+    if(padmax>=69 && padmax<=70 && id==0)
+    {
+
+      int mirror = 79;
+      int qq = 72;
+      while (qq<mirror)
+      {
+        double tmp1 = pad.cal[qq];
+        double tmp2 = pad.cal[mirror];
+
+        pad.cal[qq] = tmp2; pad.cal[mirror] = tmp1;
+        ++qq;
+        --mirror;
+      }
+
+    }
+    */
     int lowpad  = padmax - v.gravity_width/2;
     int highpad = lowpad + v.gravity_width - 1;
     if (lowpad < 0) {
@@ -626,7 +806,7 @@ cal::sweeper_crdc::gravity_fit(const var::sweeper_crdc& v)
 };
 
 void
-cal::sweeper_crdc::gaus_fit(const var::sweeper_crdc& v)
+cal::sweeper_crdc::gaus_fit(const var::sweeper_crdc& v,const int id)
 {
   static gaus_params par0;
   static gaus_fit_results par;
@@ -689,7 +869,8 @@ cal::sweeper_crdc::gaus_fit(const var::sweeper_crdc& v)
 
 void
 cal::sweeper_crdc::calibrate(const raw::sweeper_crdc& rw,
-			     const var::sweeper_crdc& v)
+			     const var::sweeper_crdc& v,
+			     const int id)
 {
   // find max pad
   short maxpad = 0;
@@ -719,14 +900,16 @@ cal::sweeper_crdc::calibrate(const raw::sweeper_crdc& rw,
   pad.calibrate(rw.pad, v.pad, rw.sample_width, padmax);
   if(v.method == 2)
     {
-      this->gravity_fit(v);
-      this->gaus_fit(v);
+      this->gravity_fit(v,id);// THR 13 Sept 2016
+      this->gaus_fit(v,id);// THR 14 Sept 2016
       if(is_valid(x_fit))
+      {
 	x = x_fit * v.x_slope + v.x_offset;
+      }
     }
   else
     {
-      this->gravity_fit(v);
+      this->gravity_fit(v,id);// THR 13 Sept 2016
       if(is_valid(x_gravity))
 	x = x_gravity * v.x_slope + v.x_offset;
     }
@@ -1626,7 +1809,7 @@ anode[3]=double(rw.raw[31]);// last detector that beam hits
 // corners for detector 0: LU, RU, RD, LD
 for(int i=0; i<4; i++)
 {
-  corner[0][i]=double(rw.raw[i+4]) * v.cnr_slope[0][i+4] + v.cnr_offset[0][i+4];
+  corner[0][i]=double(rw.raw[i+4]) * v.cnr_slope[0][i] + v.cnr_offset[0][i];
 }
 // corners for detector 1: LU, RU, RD, LD
 for(int i=0; i<4; i++)
@@ -1636,12 +1819,17 @@ for(int i=0; i<4; i++)
 // corners for detector 2: LU, RU, RD, LD
 for(int i=0; i<4; i++)
 {
-  corner[2][i]=double(rw.raw[i+12]) * v.cnr_slope[2][i+12] + v.cnr_offset[2][i+12];
+  corner[2][i]=double(rw.raw[i+12]) * v.cnr_slope[2][i] + v.cnr_offset[2][i];
 }
 // corners for detector 3: LU, RU, RD, LD
 for(int i=0; i<4; i++)
 {
-  corner[3][i]=double(rw.raw[i+8]);// * v.cnr_slope[3][i+8] + v.cnr_offset[3][i+8];
+  corner[3][i]=double(rw.raw[i+8]) * v.cnr_slope[3][i] + v.cnr_offset[3][i];
+}
+
+for(int i=0;i<4;i++)
+{
+  ecal[i] = anode[i] * v.e_slope[i] + v.e_offset[i];
 }
 
 };
@@ -2738,8 +2926,9 @@ void
 cal::sweeper::calibrate(const raw::sweeper* rw,
 			const var::sweeper& v)
 {
-  crdc1.calibrate(rw->crdc1, v.crdc1);
-  crdc2.calibrate(rw->crdc2, v.crdc2);
+  /* Pass id tag for crdc 1 / 2 THR 13 September 2016 */
+  crdc1.calibrate(rw->crdc1, v.crdc1,0);
+  crdc2.calibrate(rw->crdc2, v.crdc2,1);
   crdc1.calculate_image(crdc1, v.crdc1, crdc2, v.crdc2);
   crdc2.calculate_image(crdc1, v.crdc1, crdc2, v.crdc2);
 
