@@ -28,9 +28,10 @@ public :
    // histograms for fragment position, angles, KE at CRDC 1
    TH2D* hxy4,htxty4
    TH1D* hke4;
+//   TH1D* h4time;
    // histograms for fragment forward tracked comparison (forward
-   // matrix as ST MoNA does it
-   TH2D* hFwrdMxy; TH2D* hFwrdMtxty;
+   // matrix applied as ST MoNA does it
+//   TH2D* hFwrdMxy; TH2D* hFwrdMtxty;
    // histograms for fragment position and angles at CRDC 1 as ST MoNA calculates
    TH2D* hxy4o;
    TH2D* htxty4o;
@@ -55,6 +56,7 @@ public :
    TH1D* hfdist;
    TH1D* hc2path;
    TH1D* hsToF;
+   TH1D* hsToFres;
    TH1D* hfvelT;
    TH1D* hfkeT;
    TH2D* hc2pathdist;
@@ -62,6 +64,7 @@ public :
    TH1D* hvr2;
    TH1D* hvrC;
    TH1D* hvrT;
+
 /**/
 
    // Declaration of leaf types
@@ -181,26 +184,25 @@ PreGeant::PreGeant(TTree *tree) : fChain(0)
 //      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam_1MeV3bodyMresOFF.root");
 //      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam_Glauber3bodyMresOFF.root");
 //      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam_GlauberTrans3bodyMresOFF.root");
-     TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam_txty3bodyMresOFF.root");
+//     TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam_txty3bodyMresOFF.root");
 //      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam_txty1MeV3bodyMresOFF.root");
 //      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam_dbe3bodyMresOFF.root");
 //      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam_dbe1MeV3bodyMresOFF.root");
 //      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam_dxy3bodyMresOFF.root");
 //      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam_dxy1MeV3bodyMresOFF.root");
-//      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam_Tgt3bodyMresOFF.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam_Tgt3bodyMresOFF.root");
       if (!f || !f->IsOpen()) {
-//         f = new TFile("O26_O24+2n_PencilBeam_3bodyMresOFF.root");
 //         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam_3bodyMresOFF.root");
 //         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam_1MeV3bodyMresOFF.root");
 //         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam_Glauber3bodyMresOFF.root");
 //         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam_GlauberTrans3bodyMresOFF.root");
-         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam_txty3bodyMresOFF.root");
+//         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam_txty3bodyMresOFF.root");
 //         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam_txty1MeV3bodyMresOFF.root");
 //         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam_dbe3bodyMresOFF.root");
 //         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam_dbe1MeV3bodyMresOFF.root");
 //         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam_dxy3bodyMresOFF.root");
 //         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam_dxy1MeV3bodyMresOFF.root");
-//         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam_Tgt3bodyMresOFF.root");
+         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam_Tgt3bodyMresOFF.root");
       }
       f->GetObject("t",tree);
 

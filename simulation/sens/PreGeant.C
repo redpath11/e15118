@@ -40,9 +40,20 @@ void PreGeant::Loop()
    const Double_t amu_M = 931.494088;// MeV/c^2
    const Double_t     C = 29.9792458;// cm/ns
    const Double_t fA = 24.;
+   // Remember that K0 is the KE for O-24 reference ptcl on the
+   // magnet central track
    const Double_t K0 = 61.5;//MeV/u thin target to get Bp to match
 //   const Double_t K0 = 63.3359;//MeV/u after thick target
+//   const Double_t t3eloss = 0.;// O-24 through half Be3
    const Double_t t3eloss = 157.87;// O-24 through half Be3
+
+   // Kinematic factor for dt variable
+   // For the reference particle O-24 at Bp = 3.445
+   const Double_t g0 = 1.066027; const Double_t v0 = 10.3868;
+   const Double_t kappa = (-v0*g0)/(1.+g0);
+
+   // Random number generator for ToF resolution
+   TRandom *r2 = new TRandom2();
 
    // Define histograms
    /* "best case"
@@ -59,12 +70,30 @@ void PreGeant::Loop()
    Int_t nbinsv = 80; Double_t v1 =9.0,v2=12.0;
    Int_t nbinsvr= 150; Double_t vr1=-1.5,vr2=1.5;
 */
+   /* Beam tx,ty spread (w/ ToF resolution 
+   Int_t nbinsx = 150; Double_t x1=-150; Double_t x2=150;
+   Int_t nbinsy = 150; Double_t y1=-150; Double_t y2=150;
+   Int_t nbinske= 80; Double_t ke1=52.,ke2=72.;
+   Int_t nbinsv = 80; Double_t v1 =9.5,v2=11.5;
+   Int_t nbinsvr= 150; Double_t vr1=-0.75,vr2=0.75;
+   Int_t nbinst = 100; Double_t t1 = 20;Double_t t2 = 40;
+*/
+   /* Beam x,y spread 
+   Int_t nbinsx = 150; Double_t x1=-150; Double_t x2=150;
+   Int_t nbinsy = 150; Double_t y1=-150; Double_t y2=150;
+   Int_t nbinske= 80; Double_t ke1=53.,ke2=73.;
+   Int_t nbinsv = 80; Double_t v1 =9.5,v2=11.5;
+   Int_t nbinsvr= 100; Double_t vr1=-0.5,vr2=0.5;
+   Int_t nbinst = 100; Double_t t1 = 20;Double_t t2 = 40;
+*/
    /* Real Target */
    Int_t nbinsx = 150; Double_t x1=-150; Double_t x2=150;
    Int_t nbinsy = 150; Double_t y1=-150; Double_t y2=150;
    Int_t nbinske= 80; Double_t ke1=55.,ke2=95.;
    Int_t nbinsv = 80; Double_t v1 =9.5,v2=12.5;
    Int_t nbinsvr= 100; Double_t vr1=-1.0,vr2=1.0;
+   Int_t nbinst = 100; Double_t t1 = 20;Double_t t2 = 40;
+
 
    hxy2 = new TH2D("hxy2","Post-Target x vs y",nbinsx,x1,x2,nbinsy,y1,y2);
    hxy2->SetTitle("Post-Tgt3 x vs. y");
@@ -92,11 +121,12 @@ void PreGeant::Loop()
    htxty4o->SetTitle("ST CRDC 1 #theta_{x} vs. #theta_{y}");
    htxty4o->GetXaxis()->SetTitle("#theta_{x} [mrad]");
    htxty4o->GetYaxis()->SetTitle("#theta_{y} [mrad]");
-   hFwrdMxy = new TH2D("hFwrdMxy","Mtx CRDC 1 x vs y;x [mm];y [mm]",nbinsx,x1,x2,nbinsy,y1,y2);
-   hFwrdMxy->SetTitle("Mtx CRDC 1 x vs. y");
-   hFwrdMtxty = new TH2D("hFwrdMtxty","Mtx CRDC 1 tx vs ty;#theta_{x} [mrad];#theta_{y} [mrad]",
-   nbinsx,x1,x2,nbinsy,y1,y2);
-   hFwrdMtxty->SetTitle("Mtx CRDC 1 #theta_{x} vs. #theta_{y}");
+//   h4time = new TH1D("h4time","h4time",150,-15,15);
+//   hFwrdMxy = new TH2D("hFwrdMxy","Mtx CRDC 1 x vs y;x [mm];y [mm]",nbinsx,x1,x2,nbinsy,y1,y2);
+//   hFwrdMxy->SetTitle("Mtx CRDC 1 x vs. y");
+//   hFwrdMtxty = new TH2D("hFwrdMtxty","Mtx CRDC 1 tx vs ty;#theta_{x} [mrad];#theta_{y} [mrad]",
+//   nbinsx,x1,x2,nbinsy,y1,y2);
+//   hFwrdMtxty->SetTitle("Mtx CRDC 1 #theta_{x} vs. #theta_{y}");
    hxy2i = new TH2D("hxy2i","itrack Post-Target x vs y",nbinsx,x1,x2,nbinsy,y1,y2);
    hxy2i->SetTitle("itrack Post-Tgt3 x vs. y");
    hxy2i->GetXaxis()->SetTitle("x [mm]");
@@ -139,7 +169,8 @@ void PreGeant::Loop()
    hn0ke->GetXaxis()->SetTitle("First Neutron KE [MeV/u]");
    hn0v  = new TH1D("hn0v","First Neutron Velocity;First Neutron velocity [cm/ns]",nbinsv,v1,v2);
    // Fragment ToF hack //
-   hsToF  = new TH1D("hsToF","Fragment ToF;stof.pot_thin [ns]",100,-100,100);
+   hsToF  = new TH1D("hsToF","Fragment ToF;stof.pot_thin [ns]",nbinst,t1,t2);
+   hsToFres  = new TH1D("hsToFres","Fragment ToF (w/ resolution);stof.pot_thin [ns]",nbinst,t1,t2);
    hfdist = new TH1D("hfdist","Fragment Distance (via c2x);Distance [cm]",150,310,340);
    hc2path= new TH1D("hc2path","Simulation tracked c2 path;Distance [cm]",150,310,340);
    hfvelT = new TH1D("hfvelT","Fragment velocity;velocity [cm/ns]",nbinsv,v1,v2);
@@ -217,41 +248,66 @@ void PreGeant::Loop()
       if (ientry < 0) break;
       nb = fChain->GetEntry(jentry);   nbytes += nb;
       // if (Cut(ientry) < 0) continue;
+      // reset
+      for(int i=0;i<index;i++){x[i]=0.;tx[i]=0.;a[i]=0.;y[i]=0.;ty[i]=0.;b[i]=0.;dt[i]=0.;d[i]=0.;
+      			       finput[i]=0.; foutput[i]=0.;}
+      for(int i=0;i<4;i++){input[i]=0.;output[i]=0.;}
+      // resolution for ToF measurement
+      Double_t res = r2->Gaus(0.,0.465030);
       x[0] = b2p0x; tx[0] = b2p0tx; y[0] = b2p0y; ty[0] = b2p0ty;
       x[3] = b4p0x; tx[3] = b4p0tx; y[3] = b4p0y; ty[3] = b4p0ty;
       x[5] = b6p0x; tx[5] = b6p0tx; y[5] = b6p0y; ty[5] = b6p0ty;
-//      hxy4o->Fill(1000.*x[3],1000.*y[3]); htxty4o->Fill(1000.*tx[3],1000.*ty[3]);
+      hxy4o->Fill(1000.*x[3],1000.*y[3]); htxty4o->Fill(1000.*tx[3],1000.*ty[3]);
+//      hxy4o->Fill(1000.*b4p0x,1000.*b4p0y); htxty4o->Fill(1000.*b4p0tx,1000.*b4p0ty);
       hxy6o->Fill(1000.*x[5],1000.*y[5]); htxty6o->Fill(1000.*tx[5],1000.*ty[5]);
       a[0] = TMath::Tan(tx[0]);
       b[0] = TMath::Tan(ty[0]);
       //dt[0]= ???;
       d[0] = ((b2p0Ekin/fA)-K0)/K0;
       Double_t K = 0.;
+
+      /* Transform forward with full ion-optical matrix
+       * input is target coordinates
+       * output is crdc1 coordinates
+      */
 /**/
-      // Transform forward.
+      finput[0] = x[0];  finput[1] = a[0];
+      finput[2] = y[0];  finput[3] = b[0];
+      finput[4] = dt[0]; finput[5] = d[0];
 
-      x[1] = xCoefF[0]*x[0] + xCoefF[1]*a[0] + xCoefF[2]*y[0] + xCoefF[3]*b[0] + xCoefF[4]*dt[0] + xCoefF[5]*d[0] + xCoefF[6]*x[0]*x[0] + xCoefF[7]*x[0]*a[0] + xCoefF[8]*a[0]*a[0] + xCoefF[9]*x[0]*y[0] + xCoefF[10]*a[0]*y[0] + xCoefF[11]*y[0]*y[0] + xCoefF[12]*x[0]*b[0] + xCoefF[13]*a[0]*b[0] + xCoefF[14]*y[0]*b[0] + xCoefF[15]*x[0]*d[0] + xCoefF[16]*a[0]*d[0] + xCoefF[17]*y[0]*d[0] + xCoefF[18]*b[0]*b[0] + xCoefF[19]*b[0]*d[0] + xCoefF[20]*d[0]*d[0] + xCoefF[21]*x[0]*x[0]*x[0] + xCoefF[22]*x[0]*x[0]*a[0] + xCoefF[23]*x[0]*a[0]*a[0] + xCoefF[24]*a[0]*a[0]*a[0] + xCoefF[25]*x[0]*x[0]*y[0] + xCoefF[26]*x[0]*a[0]*y[0] + xCoefF[27]*a[0]*a[0]*y[0] + xCoefF[28]*x[0]*y[0]*y[0] + xCoefF[29]*a[0]*y[0]*y[0] + xCoefF[30]*y[0]*y[0]*y[0] + xCoefF[31]*x[0]*x[0]*b[0] + xCoefF[32]*x[0]*a[0]*b[0] + xCoefF[33]*a[0]*a[0]*b[0] + xCoefF[34]*x[0]*y[0]*b[0] + xCoefF[35]*a[0]*y[0]*b[0] + xCoefF[36]*y[0]*y[0]*b[0] + xCoefF[37]*x[0]*x[0]*d[0] + xCoefF[38]*x[0]*a[0]*d[0] + xCoefF[39]*a[0]*a[0]*d[0] + xCoefF[40]*x[0]*y[0]*d[0] + xCoefF[41]*a[0]*y[0]*d[0] + xCoefF[42]*y[0]*y[0]*d[0] + xCoefF[43]*x[0]*b[0]*b[0] + xCoefF[44]*a[0]*b[0]*b[0] + xCoefF[45]*y[0]*b[0]*b[0] + xCoefF[46]*x[0]*b[0]*d[0] + xCoefF[47]*a[0]*b[0]*d[0] + xCoefF[48]*y[0]*b[0]*d[0] + xCoefF[49]*x[0]*d[0]*d[0] + xCoefF[50]*a[0]*d[0]*d[0] + xCoefF[51]*y[0]*d[0]*d[0] + xCoefF[52]*b[0]*b[0]*b[0] + xCoefF[53]*b[0]*b[0]*d[0] + xCoefF[54]*b[0]*d[0]*d[0] + xCoefF[55]*d[0]*d[0]*d[0];
+      for(int i=0;i<fnlines;i++)
+      {
+        double factor = 1.;
+        for(int j=0;j<6;j++){factor *= pow(finput[j],fPower[i][j]);}
+	for(int k=0;k<5;k++){foutput[k] += fCoef[i][k] * factor;}
+      }
 
-      y[1] = yCoefF[0]*x[0] + yCoefF[1]*a[0] + yCoefF[2]*y[0] + yCoefF[3]*b[0] + yCoefF[4]*dt[0] + yCoefF[5]*d[0] + yCoefF[6]*x[0]*x[0] + yCoefF[7]*x[0]*a[0] + yCoefF[8]*a[0]*a[0] + yCoefF[9]*x[0]*y[0] + yCoefF[10]*a[0]*y[0] + yCoefF[11]*y[0]*y[0] + yCoefF[12]*x[0]*b[0] + yCoefF[13]*a[0]*b[0] + yCoefF[14]*y[0]*b[0] + yCoefF[15]*x[0]*d[0] + yCoefF[16]*a[0]*d[0] + yCoefF[17]*y[0]*d[0] + yCoefF[18]*b[0]*b[0] + yCoefF[19]*b[0]*d[0] + yCoefF[20]*d[0]*d[0] + yCoefF[21]*x[0]*x[0]*x[0] + yCoefF[22]*x[0]*x[0]*a[0] + yCoefF[23]*x[0]*a[0]*a[0] + yCoefF[24]*a[0]*a[0]*a[0] + yCoefF[25]*x[0]*x[0]*y[0] + yCoefF[26]*x[0]*a[0]*y[0] + yCoefF[27]*a[0]*a[0]*y[0] + yCoefF[28]*x[0]*y[0]*y[0] + yCoefF[29]*a[0]*y[0]*y[0] + yCoefF[30]*y[0]*y[0]*y[0] + yCoefF[31]*x[0]*x[0]*b[0] + yCoefF[32]*x[0]*a[0]*b[0] + yCoefF[33]*a[0]*a[0]*b[0] + yCoefF[34]*x[0]*y[0]*b[0] + yCoefF[35]*a[0]*y[0]*b[0] + yCoefF[36]*y[0]*y[0]*b[0] + yCoefF[37]*x[0]*x[0]*d[0] + yCoefF[38]*x[0]*a[0]*d[0] + yCoefF[39]*a[0]*a[0]*d[0] + yCoefF[40]*x[0]*y[0]*d[0] + yCoefF[41]*a[0]*y[0]*d[0] + yCoefF[42]*y[0]*y[0]*d[0] + yCoefF[43]*x[0]*b[0]*b[0] + yCoefF[44]*a[0]*b[0]*b[0] + yCoefF[45]*y[0]*b[0]*b[0] + yCoefF[46]*x[0]*b[0]*d[0] + yCoefF[47]*a[0]*b[0]*d[0] + yCoefF[48]*y[0]*b[0]*d[0] + yCoefF[49]*x[0]*d[0]*d[0] + yCoefF[50]*a[0]*d[0]*d[0] + yCoefF[51]*y[0]*d[0]*d[0] + yCoefF[52]*b[0]*b[0]*b[0] + yCoefF[53]*b[0]*b[0]*d[0] + yCoefF[54]*b[0]*d[0]*d[0] + yCoefF[55]*d[0]*d[0]*d[0];
+      x[1] = foutput[0]; a[1] = foutput[1];
+      y[1] = foutput[2]; b[1] = foutput[3];
+      dt[1]= foutput[4];
 
-      a[1] = aCoefF[0]*x[0] + aCoefF[1]*a[0] + aCoefF[2]*y[0] + aCoefF[3]*b[0] + aCoefF[4]*dt[0] + aCoefF[5]*d[0] + aCoefF[6]*x[0]*x[0] + aCoefF[7]*x[0]*a[0] + aCoefF[8]*a[0]*a[0] + aCoefF[9]*x[0]*y[0] + aCoefF[10]*a[0]*y[0] + aCoefF[11]*y[0]*y[0] + aCoefF[12]*x[0]*b[0] + aCoefF[13]*a[0]*b[0] + aCoefF[14]*y[0]*b[0] + aCoefF[15]*x[0]*d[0] + aCoefF[16]*a[0]*d[0] + aCoefF[17]*y[0]*d[0] + aCoefF[18]*b[0]*b[0] + aCoefF[19]*b[0]*d[0] + aCoefF[20]*d[0]*d[0] + aCoefF[21]*x[0]*x[0]*x[0] + aCoefF[22]*x[0]*x[0]*a[0] + aCoefF[23]*x[0]*a[0]*a[0] + aCoefF[24]*a[0]*a[0]*a[0] + aCoefF[25]*x[0]*x[0]*y[0] + aCoefF[26]*x[0]*a[0]*y[0] + aCoefF[27]*a[0]*a[0]*y[0] + aCoefF[28]*x[0]*y[0]*y[0] + aCoefF[29]*a[0]*y[0]*y[0] + aCoefF[30]*y[0]*y[0]*y[0] + aCoefF[31]*x[0]*x[0]*b[0] + aCoefF[32]*x[0]*a[0]*b[0] + aCoefF[33]*a[0]*a[0]*b[0] + aCoefF[34]*x[0]*y[0]*b[0] + aCoefF[35]*a[0]*y[0]*b[0] + aCoefF[36]*y[0]*y[0]*b[0] + aCoefF[37]*x[0]*x[0]*d[0] + aCoefF[38]*x[0]*a[0]*d[0] + aCoefF[39]*a[0]*a[0]*d[0] + aCoefF[40]*x[0]*y[0]*d[0] + aCoefF[41]*a[0]*y[0]*d[0] + aCoefF[42]*y[0]*y[0]*d[0] + aCoefF[43]*x[0]*b[0]*b[0] + aCoefF[44]*a[0]*b[0]*b[0] + aCoefF[45]*y[0]*b[0]*b[0] + aCoefF[46]*x[0]*b[0]*d[0] + aCoefF[47]*a[0]*b[0]*d[0] + aCoefF[48]*y[0]*b[0]*d[0] + aCoefF[49]*x[0]*d[0]*d[0] + aCoefF[50]*a[0]*d[0]*d[0] + aCoefF[51]*y[0]*d[0]*d[0] + aCoefF[52]*b[0]*b[0]*b[0] + aCoefF[53]*b[0]*b[0]*d[0] + aCoefF[54]*b[0]*d[0]*d[0] + aCoefF[55]*d[0]*d[0]*d[0];
 
-      b[1] = bCoefF[0]*x[0] + bCoefF[1]*a[0] + bCoefF[2]*y[0] + bCoefF[3]*b[0] + bCoefF[4]*dt[0] + bCoefF[5]*d[0] + bCoefF[6]*x[0]*x[0] + bCoefF[7]*x[0]*a[0] + bCoefF[8]*a[0]*a[0] + bCoefF[9]*x[0]*y[0] + bCoefF[10]*a[0]*y[0] + bCoefF[11]*y[0]*y[0] + bCoefF[12]*x[0]*b[0] + bCoefF[13]*a[0]*b[0] + bCoefF[14]*y[0]*b[0] + bCoefF[15]*x[0]*d[0] + bCoefF[16]*a[0]*d[0] + bCoefF[17]*y[0]*d[0] + bCoefF[18]*b[0]*b[0] + bCoefF[19]*b[0]*d[0] + bCoefF[20]*d[0]*d[0] + bCoefF[21]*x[0]*x[0]*x[0] + bCoefF[22]*x[0]*x[0]*a[0] + bCoefF[23]*x[0]*a[0]*a[0] + bCoefF[24]*a[0]*a[0]*a[0] + bCoefF[25]*x[0]*x[0]*y[0] + bCoefF[26]*x[0]*a[0]*y[0] + bCoefF[27]*a[0]*a[0]*y[0] + bCoefF[28]*x[0]*y[0]*y[0] + bCoefF[29]*a[0]*y[0]*y[0] + bCoefF[30]*y[0]*y[0]*y[0] + bCoefF[31]*x[0]*x[0]*b[0] + bCoefF[32]*x[0]*a[0]*b[0] + bCoefF[33]*a[0]*a[0]*b[0] + bCoefF[34]*x[0]*y[0]*b[0] + bCoefF[35]*a[0]*y[0]*b[0] + bCoefF[36]*y[0]*y[0]*b[0] + bCoefF[37]*x[0]*x[0]*d[0] + bCoefF[38]*x[0]*a[0]*d[0] + bCoefF[39]*a[0]*a[0]*d[0] + bCoefF[40]*x[0]*y[0]*d[0] + bCoefF[41]*a[0]*y[0]*d[0] + bCoefF[42]*y[0]*y[0]*d[0] + bCoefF[43]*x[0]*b[0]*b[0] + bCoefF[44]*a[0]*b[0]*b[0] + bCoefF[45]*y[0]*b[0]*b[0] + bCoefF[46]*x[0]*b[0]*d[0] + bCoefF[47]*a[0]*b[0]*d[0] + bCoefF[48]*y[0]*b[0]*d[0] + bCoefF[49]*x[0]*d[0]*d[0] + bCoefF[50]*a[0]*d[0]*d[0] + bCoefF[51]*y[0]*d[0]*d[0] + bCoefF[52]*b[0]*b[0]*b[0] + bCoefF[53]*b[0]*b[0]*d[0] + bCoefF[54]*b[0]*d[0]*d[0] + bCoefF[55]*d[0]*d[0]*d[0];
 
-      d[1] = d[0];
 
-      dt[1] = tCoefF[0]*x[0] + tCoefF[1]*a[0] + tCoefF[2]*y[0] + tCoefF[3]*b[0] + tCoefF[4]*dt[0] + tCoefF[5]*d[0] + tCoefF[6]*x[0]*x[0] + tCoefF[7]*x[0]*a[0] + tCoefF[8]*a[0]*a[0] + tCoefF[9]*x[0]*y[0] + tCoefF[10]*a[0]*y[0] + tCoefF[11]*y[0]*y[0] + tCoefF[12]*x[0]*b[0] + tCoefF[13]*a[0]*b[0] + tCoefF[14]*y[0]*b[0] + tCoefF[15]*x[0]*d[0] + tCoefF[16]*a[0]*d[0] + tCoefF[17]*y[0]*d[0] + tCoefF[18]*b[0]*b[0] + tCoefF[19]*b[0]*d[0] + tCoefF[20]*d[0]*d[0] + tCoefF[21]*x[0]*x[0]*x[0] + tCoefF[22]*x[0]*x[0]*a[0] + tCoefF[23]*x[0]*a[0]*a[0] + tCoefF[24]*a[0]*a[0]*a[0] + tCoefF[25]*x[0]*x[0]*y[0] + tCoefF[26]*x[0]*a[0]*y[0] + tCoefF[27]*a[0]*a[0]*y[0] + tCoefF[28]*x[0]*y[0]*y[0] + tCoefF[29]*a[0]*y[0]*y[0] + tCoefF[30]*y[0]*y[0]*y[0] + tCoefF[31]*x[0]*x[0]*b[0] + tCoefF[32]*x[0]*a[0]*b[0] + tCoefF[33]*a[0]*a[0]*b[0] + tCoefF[34]*x[0]*y[0]*b[0] + tCoefF[35]*a[0]*y[0]*b[0] + tCoefF[36]*y[0]*y[0]*b[0] + tCoefF[37]*x[0]*x[0]*d[0] + tCoefF[38]*x[0]*a[0]*d[0] + tCoefF[39]*a[0]*a[0]*d[0] + tCoefF[40]*x[0]*y[0]*d[0] + tCoefF[41]*a[0]*y[0]*d[0] + tCoefF[42]*y[0]*y[0]*d[0] + tCoefF[43]*x[0]*b[0]*b[0] + tCoefF[44]*a[0]*b[0]*b[0] + tCoefF[45]*y[0]*b[0]*b[0] + tCoefF[46]*x[0]*b[0]*d[0] + tCoefF[47]*a[0]*b[0]*d[0] + tCoefF[48]*y[0]*b[0]*d[0] + tCoefF[49]*x[0]*d[0]*d[0] + tCoefF[50]*a[0]*d[0]*d[0] + tCoefF[51]*y[0]*d[0]*d[0] + tCoefF[52]*b[0]*b[0]*b[0] + tCoefF[53]*b[0]*b[0]*d[0] + tCoefF[54]*b[0]*d[0]*d[0] + tCoefF[55]*d[0]*d[0]*d[0];
 
+      d[1] = d[0];// KE doesn't change
+      K = K0*(d[1]+1.);
+      hke4->Fill(K);
+
+      // Recover angles
       tx[1] = TMath::ATan(a[1]);
       ty[1] = TMath::ATan(b[1]);
 
+//      Double_t flighttime = dt[1] / kappa;
+//      h4time->Fill(flighttime);
+
+//      hFwrdMxy->Fill(foutput[0]*1000.,foutput[2]*1000.);
+//      hFwrdMtxty->Fill(tx[1]*1000.,ty[1]*1000.);
 
       // drift to CRDC 2
       x[4] = x[1]+c2z*a[1]; tx[4]=tx[1];
       y[4] = y[1]+c2z*b[1]; ty[4]=ty[1];
 
-      K = K0*(d[1]+1.);
-      hke4->Fill(K);
 //  c1x = z1*a[1]; c1y = z1*b[1]; hxyC1->Fill(c1x*1000.,c1y*1000.);
 
       // Transform back.
@@ -264,56 +320,21 @@ void PreGeant::Loop()
 
       b[2] = bCoefI[0]*y[1] + bCoefI[1]*b[1] + bCoefI[2]*x[1]*y[1] + bCoefI[3]*a[1]*y[1] + bCoefI[4]*x[1]*b[1] + bCoefI[5]*a[1]*b[1] + bCoefI[6]*y[1]*d[1] + bCoefI[7]*b[1]*d[1] + bCoefI[8]*x[1]*x[1]*y[1] + bCoefI[9]*x[1]*a[1]*y[1] + bCoefI[10]*a[1]*a[1]*y[1] + bCoefI[11]*y[1]*y[1]*y[1] + bCoefI[12]*x[1]*x[1]*b[1] + bCoefI[13]*x[1]*a[1]*b[1] + bCoefI[14]*a[1]*b[1]*b[1] + bCoefI[15]*y[1]*y[1]*b[1] + bCoefI[16]*x[1]*y[1]*d[1] + bCoefI[17]*a[1]*y[1]*d[1] + bCoefI[18]*y[1]*b[1]*b[1] + bCoefI[19]*x[1]*b[1]*d[1] + bCoefI[20]*a[1]*b[1]*d[1] + bCoefI[21]*y[1]*d[1]*d[1] + bCoefI[22]*b[1]*b[1]*b[1] + bCoefI[23]*b[1]*d[1]*d[1];
 
-/*
-      terms[0]=x[1];
-      terms[1]=a[1];
-      terms[2]=d[1];
-      terms[3]=dt[1];
-      terms[4]=x[1]*x[1];
-      terms[5]=x[1]*a[1];
-      terms[6]=a[1]*a[1];
-      terms[7]=y[1]*y[1];
-      terms[8]=y[1]*b[1];
-      terms[9]=x[1]*dt[1];
-      terms[10]=a[1]*dt[1];
-      terms[11]=b[1]*b[1];
-      terms[12]=dt[1]*dt[1];
-      terms[13]=x[1]*x[1]*x[1];
-      terms[14]=x[1]*x[1]*a[1];
-      terms[15]=x[1]*a[1]*a[1];
-      terms[16]=a[1]*a[1]*a[1];
-      terms[17]=x[1]*y[1]*y[1];
-      terms[18]=a[1]*y[1]*y[1];
-      terms[19]=x[1]*y[1]*b[1];
-      terms[20]=a[1]*y[1]*b[1];
-      terms[21]=x[1]*x[1]*dt[1];
-      terms[22]=x[1]*a[1]*dt[1];
-      terms[23]=a[1]*a[1]*dt[1];
-      terms[24]=y[1]*y[1]*dt[1];
-      terms[25]=x[1]*b[1]*b[1];
-      terms[26]=a[1]*b[1]*b[1];
-      terms[27]=y[1]*b[1]*dt[1];
-      terms[28]=x[1]*dt[1]*dt[1];
-      terms[29]=a[1]*dt[1]*dt[1];
-      terms[30]=b[1]*b[1]*dt[1];
-      terms[31]=dt[1]*dt[1]*dt[1];
-
-      dt[2]=0.;// reset
-
-      for(int i=0;i<32;i++)
-      { dt[2] += dtCoefI[i]*terms[i];}
-*/
       d[2] = d[1];
 
 
       // itracked back to target
-      tx[2] = TMath::ATan(a[0]);
-      ty[2] = TMath::ATan(b[0]);
+      tx[2] = TMath::ATan(a[2]);
+      ty[2] = TMath::ATan(b[2]);
+
+
 
       if(x[1]< 0.15 && y[1]< 0.15 && x[4]< 0.15 && y[4]< 0.15 &&
          x[1]>-0.15 && y[1]>-0.15 && x[4]>-0.15 && y[4]>-0.15)
-      {// IF FOR CRDC ACCEPTANCES
+      {// IF FOR CRDC ACCEPTANCES: based on tracking done here,
+       // NOT in st_mona
       hxy2->Fill(1000.*x[0],1000.*y[0]); htxty2->Fill(1000.*tx[0],1000.*ty[0]);
+      hxy2i->Fill(1000.*x[2],1000.*y[2]); htxty2i->Fill(1000.*tx[2],1000.*ty[2]);
       hxy4->Fill(1000.*x[1],1000.*y[1]); htxty4->Fill(1000.*tx[1],1000.*ty[1]);
       hxy6->Fill(1000.*x[4],1000.*y[4]); htxty6->Fill(1000.*tx[4],1000.*ty[4]);
       // Post-target fragment calculations
@@ -329,26 +350,6 @@ void PreGeant::Loop()
 
         hfvel2->Fill(fvel2);
         }
-
-      hxy2i->Fill(1000.*x[2],1000.*y[2]);
-      htxty2i->Fill(1000.*tx[2],1000.*ty[2]);
-      /* Transform forward with full ion-optical matrix
-       * input is target coordinates
-       * output is crdc1 coordinates
-      */
-      for(int i=0;i<6;i++){finput[i]=0.;foutput[i]=0.;}// reset i/o arrays
-      finput[0] = x[0];  finput[1] = tx[0];
-      finput[2] = y[0];  finput[3] = ty[0];
-      finput[4] = dt[0]; finput[5] = d[0];
-      for(int i=0;i<fnlines;i++)
-      {
-        double factor = 1.;
-        for(int j=0;j<6;j++){factor *= pow(finput[j],fPower[i][j]);}
-	for(int k=0;k<5;k++){foutput[k] += fCoef[i][k] * factor;}
-      }
-      hFwrdMxy->Fill(foutput[0]*1000.,foutput[2]*1000.);
-      hFwrdMtxty->Fill(foutput[1]*1000.,foutput[3]*1000.);
-      hxy4o->Fill(1000.*b4p0x,1000.*b4p0y); htxty4o->Fill(1000.*b4p0tx,1000.*b4p0ty);
 
       /* Transform with partial inverse matrix
        * input[0] = crdc1.x
@@ -389,15 +390,15 @@ void PreGeant::Loop()
 
 
 
-    /* Neutrons !! 
+    /* Neutrons !! */
     Double_t n0ke    = b2p1Ekin;
     Double_t n0gamma = (n0ke / amu_M) + 1.;
     Double_t n0beta  = 1. - 1./(n0gamma*n0gamma);
     Double_t n0vel   = C * sqrt(n0beta);
     hn0ke->Fill(n0ke); hn0v->Fill(n0vel);
-*/
 
-    /* Fragment velocity 
+
+    /* Fragment velocity */
     // Determine ToF target scint to crdc2 //
     Double_t c2path = (b6p0path*100.);// + 102.3239;
 //    Double_t fthin  = (c2path+102.3239) + (90.2/cos(tx[1]));
@@ -409,7 +410,7 @@ void PreGeant::Loop()
     // Estimate distance from crdc 2 x //
 //    Double_t fdist = (x[1]*1000.)*0.06832 + 425.1;
     Double_t fdist = (x[1]*1000.)*0.06832 + 322.7;
-    Double_t fvelocity = fdist/sToF;
+    Double_t fvelocity = fdist/(sToF + res);
     Double_t fbeta0    = fvelocity/C;
     Double_t fgamma0   = 1./sqrt(1. - (fbeta0*fbeta0));
     Double_t fkenergy0 = (amu_M*(fgamma0-1.));//MeV/u
@@ -417,12 +418,13 @@ void PreGeant::Loop()
     fgamma0            = fkenergy0 / amu_M + 1.;
     fbeta0             = 1. - (1./(fgamma0*fgamma0));
     fvelocity          = sqrt(fbeta0)*C;
-*/
+
     /* ADD ENERGY ADDBACK HERE */
 //    Double_t fkenergy  = fkenergy0 + (t3eloss/fA);// MeV/u
 
-/*
+/**/
     hsToF->Fill(sToF);
+    hsToFres->Fill(sToF + res);
     hfdist->Fill(fdist);
     hc2path->Fill(c2path);
     hfvelT->Fill(fvelocity);
@@ -435,7 +437,7 @@ void PreGeant::Loop()
     hvrC->Fill(vrel);
     vrel = n0vel - fvel2;
     hvr2->Fill(vrel);
-*/
+
 
     }// END IF FOR CRDC ACCEPTANCES
 
@@ -455,6 +457,14 @@ void PreGeant::Loop()
   c1->Divide(2,1);
   c1->cd(1); hxy2->Draw("COLZ");
   c1->cd(2); htxty2->Draw("COLZ");
+
+  /* Plot fragment profile from full
+   * inverse tracking back to target
+  */
+  TCanvas *c8 = new TCanvas("c8","c8",1000,500);
+  c8->Divide(2,1);
+  c8->cd(1); hxy2i->Draw("COLZ");
+  c8->cd(2); htxty2i->Draw("COLZ");
   
 
   // Plot fragment profile on CRDC 1 (DV)
@@ -469,11 +479,12 @@ void PreGeant::Loop()
   c3->cd(1); hxy4o->Draw("COLZ");
   c3->cd(2); htxty4o->Draw("COLZ");
 
-  /* Plot fragment profile on CRDC 1 (ST here) */
+  /* Plot fragment profile on CRDC 1 (ST here) 
   TCanvas *c7 = new TCanvas("c7","c7",1000,500);
   c7->Divide(2,1);
   c7->cd(1); hFwrdMxy->Draw("COLZ");
   c7->cd(2); hFwrdMtxty->Draw("COLZ");
+*/
 
 
   // Plot fragment profile on CRDC 2 (DV)
@@ -496,7 +507,7 @@ void PreGeant::Loop()
   c6->cd(2); htxty2i->Draw("COLZ");
   c6->cd(3); htxtyC->Draw("COLZ");
 
-/*
+/**/
 
   // Check number of entires before scaling
   cout << "Nentries(KE): " << endl;
@@ -548,7 +559,7 @@ void PreGeant::Loop()
 //  hvrC->Draw(); hvrT->Draw("SAME");
   for(int i=8;i<11;i++){csb[i]->Draw("SAME");}
 
-*/
+
 
 //  hvrT->Fit("gaus");
   /* Check statistics
@@ -557,18 +568,23 @@ void PreGeant::Loop()
 */
 
 
-  /* Check Fragment KE ToF hack stuff 
+  /* Check Fragment KE ToF hack stuff */
   TCanvas *c30 = new TCanvas("c30","c30",1000,500);
   c30->Divide(2,1);
   c30->cd(1); hfdist->Draw();
   c30->cd(2); hc2path->Draw();
-  //c30->cd(2); hsToF->Draw();
+
   TCanvas *c31 = new TCanvas("c31","c31",700,500);
   hc2pathdist->Draw("COLZ");
+
+  TCanvas *c32 = new TCanvas("c32","c32",700,500);
+  hsToF->Draw();
+  hsToFres->SetLineColor(2);
+  hsToFres->Draw("SAME");
 
   DeallocateMatrix(Coeff,nlines,ncoef);
   DeallocateMatrix(Power,nlines,npar);
   DeallocateMatrix(fCoef,fnlines,fncoef);
   DeallocateMatrix(fPower,fnlines,fncoef);
-*/
+
 }
