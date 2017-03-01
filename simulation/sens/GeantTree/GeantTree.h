@@ -20,12 +20,18 @@ class GeantTree {
 public :
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
    Int_t           fCurrent; //!current Tree number in a TChain
-   TH1D* tof;
-   TH1D* fvel;
-   TH1D* ke0;
-   TH1D* nvel;
-   TH1D* vrel;
-
+   TH1D *h2n0ke;
+   TH1D *h2n0v;
+//   TH1D *h13n0ke;
+   TH1D *hgn0ke;
+   TH1D *hgn0v;
+   TH2D *hxy2;
+   TH2D *htxty2;
+   TH1D *h2fke;
+   TH1D *h2fv;
+   TH2D *hxy7o; TH2D *htxty7o;
+   TH2D *hxy9o; TH2D *htxty9o;
+   TH1D *hfvel; TH1D *hfke;
    // Declaration of leaf types
    Double_t        b1p0x;
    Double_t        b1p0tx;
@@ -41,6 +47,7 @@ public :
    Double_t        b2p0TP;
    Double_t        b2p0dE;
    Double_t        b2p0Ekin;
+   Double_t        b2p1Ekin;
    Double_t        b2p0R_pz;
    Double_t        b2p0R_exen;
    Double_t        b2p0R_exen2;
@@ -337,6 +344,7 @@ public :
    TBranch        *b_b2p0TP;   //!
    TBranch        *b_b2p0dE;   //!
    TBranch        *b_b2p0Ekin;   //!
+   TBranch        *b_b2p1Ekin;   //!
    TBranch        *b_b2p0R_pz;   //!
    TBranch        *b_b2p0R_exen;   //!
    TBranch        *b_b2p0R_exen2;   //!
@@ -637,10 +645,12 @@ GeantTree::GeantTree(TTree *tree) : fChain(0)
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n-geant_3body.root");
+//      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam-geant_3bodyMresOFF.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam-geant_1MeV3bodyMresOFF.root");
       if (!f || !f->IsOpen()) {
-//         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n-geant_3body.root");
-         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n-geant_3bodyNoMres.root");
+//         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam-geant_3bodyMresOFF.root");
+         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam-geant_1MeV3bodyMresOFF.root");
+
       }
       f->GetObject("t",tree);
 
@@ -703,6 +713,7 @@ void GeantTree::Init(TTree *tree)
    fChain->SetBranchAddress("b2p0TP", &b2p0TP, &b_b2p0TP);
    fChain->SetBranchAddress("b2p0dE", &b2p0dE, &b_b2p0dE);
    fChain->SetBranchAddress("b2p0Ekin", &b2p0Ekin, &b_b2p0Ekin);
+   fChain->SetBranchAddress("b2p1Ekin", &b2p1Ekin, &b_b2p1Ekin);
    fChain->SetBranchAddress("b2p0R_pz", &b2p0R_pz, &b_b2p0R_pz);
    fChain->SetBranchAddress("b2p0R_exen", &b2p0R_exen, &b_b2p0R_exen);
    fChain->SetBranchAddress("b2p0R_exen2", &b2p0R_exen2, &b_b2p0R_exen2);
