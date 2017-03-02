@@ -29,9 +29,16 @@ public :
    TH2D *htxty2;
    TH1D *h2fke;
    TH1D *h2fv;
+   TH1D *hPfv; TH1D *hPfke;
+   TH1D *HTrfke; TH1D *hTrfv;
+   TH2D *hxy7; TH2D *htxty7;
+   TH2D *hxy9; TH2D *htxty9;
    TH2D *hxy7o; TH2D *htxty7o;
    TH2D *hxy9o; TH2D *htxty9o;
    TH1D *hfvel; TH1D *hfke;
+   TH1D *h22vrel; TH1D *h2Tvrel;
+   TH1D *hg2vrel; TH1D *hgTvrel;
+   TH1D *hgPvrel; TH1D *hgTrvrel;
    // Declaration of leaf types
    Double_t        b1p0x;
    Double_t        b1p0tx;
@@ -646,10 +653,20 @@ GeantTree::GeantTree(TTree *tree) : fChain(0)
 // used to generate this class and read the Tree.
    if (tree == 0) {
 //      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam-geant_3bodyMresOFF.root");
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam-geant_1MeV3bodyMresOFF.root");
+//      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam-geant_3bodyMresON.root");
+//      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam-geant_1MeV3bodyMresON.root");
+//      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam-geant_1MeV3bodyMresOFF.root");
+//      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam-geant_dtxty3bodyMresON.root");
+//      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam-geant_dxy3bodyMresON.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("O26_O24+2n_PencilBeam-geant_Tgt3bodyMresON.root");
       if (!f || !f->IsOpen()) {
 //         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam-geant_3bodyMresOFF.root");
-         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam-geant_1MeV3bodyMresOFF.root");
+//         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam-geant_3bodyMresON.root");
+//         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam-geant_1MeV3bodyMresON.root");
+//         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam-geant_1MeV3bodyMresOFF.root");
+//         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam-geant_dtxty3bodyMresON.root");
+//         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam-geant_dxy3bodyMresON.root");
+         f = new TFile("/mnt/simulations/MoNAsims/O26_analysis/O26_O24+2n_PencilBeam-geant_Tgt3bodyMresON.root");
 
       }
       f->GetObject("t",tree);

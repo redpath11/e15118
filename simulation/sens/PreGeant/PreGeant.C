@@ -1,6 +1,7 @@
 #define PreGeant_cxx
 #include "PreGeant.h"
 #include "Coefficients.h"
+#include "Binning.h"
 #include "thr_cosy_map.hh"
 #include "UtilFunctions.hh"
 #include <TH2.h>
@@ -34,9 +35,27 @@ void PreGeant::Loop()
 //by  b_branchname->GetEntry(ientry); //read only this branch
    if (fChain == 0) return;
 
+   fChain->SetBranchStatus("*",0);// disable all branches
+   fChain->SetBranchStatus("b2p0x",1);
+   fChain->SetBranchStatus("b2p0tx",1);
+   fChain->SetBranchStatus("b2p0y",1);
+   fChain->SetBranchStatus("b2p0ty",1);
+   fChain->SetBranchStatus("b2p0Ekin",1);
+   fChain->SetBranchStatus("b2p1Ekin",1);
+   fChain->SetBranchStatus("b4p0x",1);
+   fChain->SetBranchStatus("b4p0tx",1);
+   fChain->SetBranchStatus("b4p0y",1);
+   fChain->SetBranchStatus("b4p0ty",1);
+   fChain->SetBranchStatus("b6p0x",1);
+   fChain->SetBranchStatus("b6p0tx",1);
+   fChain->SetBranchStatus("b6p0y",1);
+   fChain->SetBranchStatus("b6p0ty",1);
+   fChain->SetBranchStatus("b6p0path",1);
+
    // Set branch states
 
    // Constants
+//   const Double_t n_M   = 939.565560;// [MeV/c^2]
    const Double_t amu_M = 931.494088;// MeV/c^2
    const Double_t     C = 29.9792458;// cm/ns
    const Double_t fA = 24.;
@@ -44,56 +63,21 @@ void PreGeant::Loop()
    // magnet central track
    const Double_t K0 = 61.5;//MeV/u thin target to get Bp to match
 //   const Double_t K0 = 63.3359;//MeV/u after thick target
-//   const Double_t t3eloss = 0.;// O-24 through half Be3
-   const Double_t t3eloss = 157.87;// O-24 through half Be3
+   const Double_t t3eloss = 0.;// O-24 through thin target
+//   const Double_t t3eloss = 157.87;// O-24 through half Be3
+   const Double_t c2z=1.588;// [m]
 
-   // Kinematic factor for dt variable
+   /* Kinematic factor for dt variable
    // For the reference particle O-24 at Bp = 3.445
    const Double_t g0 = 1.066027; const Double_t v0 = 10.3868;
    const Double_t kappa = (-v0*g0)/(1.+g0);
+*/
 
    // Random number generator for ToF resolution
    TRandom *r2 = new TRandom2();
 
    // Define histograms
-   /* "best case"
-   Int_t nbinsx = 100; Double_t x1=-5; Double_t x2=5;
-   Int_t nbinsy = 100; Double_t y1=-5; Double_t y2=5;
-   Int_t nbinske= 100; Double_t ke1=61.,ke2=62.;
-   Int_t nbinsv = 100; Double_t v1 =10.36,v2=10.46;
-   Int_t nbinsvr= 100; Double_t vr1=-1.,vr2=1.;
-   */
-   /* 1MeV txty 
-   Int_t nbinsx = 150; Double_t x1=-150; Double_t x2=150;
-   Int_t nbinsy = 150; Double_t y1=-150; Double_t y2=150;
-   Int_t nbinske= 80; Double_t ke1=40.,ke2=80.;
-   Int_t nbinsv = 80; Double_t v1 =9.0,v2=12.0;
-   Int_t nbinsvr= 150; Double_t vr1=-1.5,vr2=1.5;
-*/
-   /* Beam tx,ty spread (w/ ToF resolution 
-   Int_t nbinsx = 150; Double_t x1=-150; Double_t x2=150;
-   Int_t nbinsy = 150; Double_t y1=-150; Double_t y2=150;
-   Int_t nbinske= 80; Double_t ke1=52.,ke2=72.;
-   Int_t nbinsv = 80; Double_t v1 =9.5,v2=11.5;
-   Int_t nbinsvr= 150; Double_t vr1=-0.75,vr2=0.75;
-   Int_t nbinst = 100; Double_t t1 = 20;Double_t t2 = 40;
-*/
-   /* Beam x,y spread 
-   Int_t nbinsx = 150; Double_t x1=-150; Double_t x2=150;
-   Int_t nbinsy = 150; Double_t y1=-150; Double_t y2=150;
-   Int_t nbinske= 80; Double_t ke1=53.,ke2=73.;
-   Int_t nbinsv = 80; Double_t v1 =9.5,v2=11.5;
-   Int_t nbinsvr= 100; Double_t vr1=-0.5,vr2=0.5;
-   Int_t nbinst = 100; Double_t t1 = 20;Double_t t2 = 40;
-*/
-   /* Real Target */
-   Int_t nbinsx = 150; Double_t x1=-150; Double_t x2=150;
-   Int_t nbinsy = 150; Double_t y1=-150; Double_t y2=150;
-   Int_t nbinske= 80; Double_t ke1=55.,ke2=95.;
-   Int_t nbinsv = 80; Double_t v1 =9.5,v2=12.5;
-   Int_t nbinsvr= 100; Double_t vr1=-1.0,vr2=1.0;
-   Int_t nbinst = 100; Double_t t1 = 20;Double_t t2 = 40;
-
+   // Binning parameters moved to Binning.h
 
    hxy2 = new TH2D("hxy2","Post-Target x vs y",nbinsx,x1,x2,nbinsy,y1,y2);
    hxy2->SetTitle("Post-Tgt3 x vs. y");
@@ -201,7 +185,6 @@ void PreGeant::Loop()
    /* test drift to CRDC 1
    Double_t c1x=0.,c1y=0.,z1=1.25;*/
    // CRDC 2 drift
-   Double_t c2z=1.588;// [m]
    // Fragment KE after magnet
 //   Double_t terms[32];
 
@@ -331,8 +314,7 @@ void PreGeant::Loop()
 
       if(x[1]< 0.15 && y[1]< 0.15 && x[4]< 0.15 && y[4]< 0.15 &&
          x[1]>-0.15 && y[1]>-0.15 && x[4]>-0.15 && y[4]>-0.15)
-      {// IF FOR CRDC ACCEPTANCES: based on tracking done here,
-       // NOT in st_mona
+      {// IF FOR CRDC ACCEPTANCES: based on tracking done here, NOT in st_mona
       hxy2->Fill(1000.*x[0],1000.*y[0]); htxty2->Fill(1000.*tx[0],1000.*ty[0]);
       hxy2i->Fill(1000.*x[2],1000.*y[2]); htxty2i->Fill(1000.*tx[2],1000.*ty[2]);
       hxy4->Fill(1000.*x[1],1000.*y[1]); htxty4->Fill(1000.*tx[1],1000.*ty[1]);
@@ -393,6 +375,8 @@ void PreGeant::Loop()
     /* Neutrons !! */
     Double_t n0ke    = b2p1Ekin;
     Double_t n0gamma = (n0ke / amu_M) + 1.;
+//    Double_t n0gamma = (b2p1Ekin/n_M)+1.;
+//    Double_t n0ke    = amu_M*(n0gamma-1.);
     Double_t n0beta  = 1. - 1./(n0gamma*n0gamma);
     Double_t n0vel   = C * sqrt(n0beta);
     hn0ke->Fill(n0ke); hn0v->Fill(n0vel);
@@ -408,8 +392,9 @@ void PreGeant::Loop()
 //    Double_t sToF   = fthin/fvel;
     Double_t sToF   = c2path/fvel;
     // Estimate distance from crdc 2 x //
-//    Double_t fdist = (x[1]*1000.)*0.06832 + 425.1;
-    Double_t fdist = (x[1]*1000.)*0.06832 + 322.7;
+//    Double_t fdist = (x[4]*1000.)*0.06832 + 425.1;
+//    Double_t fdist = (x[4]*1000.)*0.06832 + 322.7;
+    Double_t fdist = (x[4]*1000.)*0.06832 + 322.7;
     Double_t fvelocity = fdist/(sToF + res);
     Double_t fbeta0    = fvelocity/C;
     Double_t fgamma0   = 1./sqrt(1. - (fbeta0*fbeta0));
@@ -521,7 +506,7 @@ void PreGeant::Loop()
   TCanvas *c20 = new TCanvas("c20","c20",1000,500);
   c20->Divide(2,1);
   // KE: post-tgt, p-inv recon, ToF recon
-  TPaveText *csb[11]; Int_t hcolors[4] = {1,28,2,4};
+  TPaveText *csb[13]; Int_t hcolors[4] = {1,28,2,4};
   ModHistogram(hfke2,hcolors[0],4); ModHistogram(hdeC,hcolors[1],1);
   ModHistogram(hfkeT,hcolors[2],1); ModHistogram(hn0ke,hcolors[3],1);
   csb[0] = CustomStatsBox(hfke2,1,hcolors[0],0);
@@ -578,9 +563,12 @@ void PreGeant::Loop()
   hc2pathdist->Draw("COLZ");
 
   TCanvas *c32 = new TCanvas("c32","c32",700,500);
+  ModHistogram(hsToF,1,2); ModHistogram(hsToFres,2,2);
+  csb[11] = CustomStatsBox(hsToF,1,1,0);
+  csb[12] = CustomStatsBox(hsToFres,1,2,1);
   hsToF->Draw();
-  hsToFres->SetLineColor(2);
   hsToFres->Draw("SAME");
+  for(int i=11;i<13;i++){csb[i]->Draw("SAME");}
 
   DeallocateMatrix(Coeff,nlines,ncoef);
   DeallocateMatrix(Power,nlines,npar);
