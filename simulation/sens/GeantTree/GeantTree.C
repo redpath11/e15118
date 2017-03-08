@@ -1,5 +1,6 @@
 #define GeantTree_cxx
 #include "GeantTree.h"
+//#include "DefHists.h"
 #include "thr_cosy_map.hh"
 #include "UtilFunctions.hh"
 #include "Binning.h"
@@ -56,6 +57,8 @@ void GeantTree::Loop()
    fChain->SetBranchStatus("b13pn1g1z",1);
    fChain->SetBranchStatus("b13pn1g1t",1);
 
+
+
    /*
    fChain->SetBranchStatus("b7p0Ekin",1);
    fChain->SetBranchStatus("b9p0x",1);
@@ -76,36 +79,44 @@ void GeantTree::Loop()
    const Double_t fA = 24.;
    // Remember that K0 is the KE for O-24 reference ptcl on the
    // magnet central track
-   const Double_t K0 = 61.5;//[MeV/u] thin target to get Bp to match
+//   const Double_t K0 = 61.5037;//[MeV/u] thin target to get Bp to match
+   const Double_t K0 = 61.5806;//[MeV/u] thin target to get Bp to match
+//   const K0 = 1477.934;// total reference ptcl KE the way stmona calculates it
 //   const Double_t K0 = 63.3359;//MeV/u after thick target
-//   const Double_t t3eloss = 0.;// O-24 through thin target
-   const Double_t t3eloss = 157.87;// O-24 through half Be3
+   const Double_t t3eloss = 0.;// O-24 through thin target
+//   const Double_t t3eloss = 157.87;// O-24 through half Be3
    const Double_t c2z=1.588;// [m]
 
    // Random number generator
    TRandom* r2 = new TRandom2();
 
-   // Post Target Stuff //
-   hxy2 = new TH2D("hxy2","Post-Tgt3 x vs y;x [mm];y [mm]",nbinsx,x1,x2,nbinsy,y1,y2);
-   htxty2 = new TH2D("htxty2","Post-Tgt3 tx vs ty",nbinsx,x1,x2,nbinsy,y1,y2);
-   htxty2->GetXaxis()->SetTitle("#theta_{x} [mrad]");
-   htxty2->GetYaxis()->SetTitle("#theta_{y} [mrad]");
-   hxy7  = new TH2D("hxy7", "CRDC1 x vs y;x [mm];y [mm]",   nbinsx,x1,x2,nbinsy,y1,y2);
-   htxty7= new TH2D("htxty7","CRDC1 tx vs ty",              nbinsx,x1,x2,nbinsy,y1,y2);
-   htxty7->GetXaxis()->SetTitle("#theta_{x} [mrad]");
-   htxty7->GetYaxis()->SetTitle("#theta_{y} [mrad]");
-   hxy7o   = new TH2D("hxy7o","ST CRDC1 x vs y;x [mm];y [mm]",nbinsx,x1,x2,nbinsy,y1,y2);
-   htxty7o = new TH2D("htxty7o","ST CRDC1 tx vs ty",nbinsx,x1,x2,nbinsy,y1,y2);
-   htxty7o->GetXaxis()->SetTitle("#theta_{x} [mrad]");
-   htxty7o->GetYaxis()->SetTitle("#theta_{y} [mrad]");
-   hxy9    = new TH2D("hxy9", "CRDC2 x vs y;x [mm];y [mm]",   nbinsx,x1,x2,nbinsy,y1,y2);
-   htxty9  = new TH2D("htxty8","CRDC2 tx vs ty",              nbinsx,x1,x2,nbinsy,y1,y2);
-   htxty9->GetXaxis()->SetTitle("#theta_{x} [mrad]");
-   htxty9->GetYaxis()->SetTitle("#theta_{y} [mrad]");
-   hxy9o   = new TH2D("hxy9o","ST CRDC2 x vs y;x [mm];y [mm]",nbinsx,x1,x2,nbinsy,y1,y2);
-   htxty9o = new TH2D("htxty9o","ST CRDC2 tx vs ty",nbinsx,x1,x2,nbinsy,y1,y2);
-   htxty9o->GetXaxis()->SetTitle("#theta_{x} [mrad]");
-   htxty9o->GetYaxis()->SetTitle("#theta_{y} [mrad]");
+   /* xy,txty plots: pointer arrays
+    *   0: b2 profile
+    *   1: GT CRDC1 xy,txty
+    *   2: ST CRDC1 xy,txty
+    *   3: GT CRDC2 xy,txty
+    *   4: ST CRDC2 xy,txty*/
+   hxy[0] = new TH2D("hxy2","Post-Tgt3 x vs y;x [mm];y [mm]",nbinsx,x1,x2,nbinsy,y1,y2);
+   htxty[0] = new TH2D("htxty2","Post-Tgt3 tx vs ty",nbinsx,x1,x2,nbinsy,y1,y2);
+   htxty[0]->GetXaxis()->SetTitle("#theta_{x} [mrad]");
+   htxty[0]->GetYaxis()->SetTitle("#theta_{y} [mrad]");
+   hxy[1]  = new TH2D("hxy7", "CRDC1 x vs y;x [mm];y [mm]",   nbinsx,x1,x2,nbinsy,y1,y2);
+   htxty[1]= new TH2D("htxty7","CRDC1 tx vs ty",              nbinsx,x1,x2,nbinsy,y1,y2);
+   htxty[1]->GetXaxis()->SetTitle("#theta_{x} [mrad]");
+   htxty[1]->GetYaxis()->SetTitle("#theta_{y} [mrad]");
+   hxy[2]   = new TH2D("hxy7o","ST CRDC1 x vs y;x [mm];y [mm]",nbinsx,x1,x2,nbinsy,y1,y2);
+   htxty[2] = new TH2D("htxty7o","ST CRDC1 tx vs ty",nbinsx,x1,x2,nbinsy,y1,y2);
+   htxty[2]->GetXaxis()->SetTitle("#theta_{x} [mrad]");
+   htxty[2]->GetYaxis()->SetTitle("#theta_{y} [mrad]");
+   hxy[3]    = new TH2D("hxy9", "CRDC2 x vs y;x [mm];y [mm]",   nbinsx,x1,x2,nbinsy,y1,y2);
+   htxty[3]  = new TH2D("htxty9","CRDC2 tx vs ty",              nbinsx,x1,x2,nbinsy,y1,y2);
+   htxty[3]->GetXaxis()->SetTitle("#theta_{x} [mrad]");
+   htxty[3]->GetYaxis()->SetTitle("#theta_{y} [mrad]");
+   hxy[4]   = new TH2D("hxy9o","ST CRDC2 x vs y;x [mm];y [mm]",nbinsx,x1,x2,nbinsy,y1,y2);
+   htxty[4] = new TH2D("htxty9o","ST CRDC2 tx vs ty",nbinsx,x1,x2,nbinsy,y1,y2);
+   htxty[4]->GetXaxis()->SetTitle("#theta_{x} [mrad]");
+   htxty[4]->GetYaxis()->SetTitle("#theta_{y} [mrad]");
+   
    h2fke = new TH1D("h2fke","Post-Tgt3 Fragment KE;KE [MeV/u]",nbinske,ke1,ke2);
    h2fv  = new TH1D("h2fv", "Post-Tgt3 Fragment velocity;velocity [cm/ns]",nbinsv,v1,v2);
    // Neutrons !! //
@@ -129,6 +140,7 @@ void GeantTree::Loop()
    hgTvrel = new TH1D("hgTvrel","Relative Velocity;relative velocity [cm/ns]",nbinsvr,vr1,vr2);
    hgPvrel = new TH1D("hgPvrel","Relative Velocity;relative velocity [cm/ns]",nbinsvr,vr1,vr2);
    hgTrvrel= new TH1D("hgTrvrel","Relative Velocity;relative velocity [cm/ns]",nbinsvr,vr1,vr2);
+ 
 
    /* Indexes:  0 - starting after target
     * 		1 - forward mapped to CRDC 1
@@ -204,13 +216,14 @@ void GeantTree::Loop()
       a[0] = TMath::Tan(tx[0]); b[0] = TMath::Tan(ty[0]);
       x[3] = b7p0x; tx[3] = b7p0tx; y[3] = b7p0y; ty[3] = b7p0ty;
       x[5] = b9p0x; tx[5] = b9p0tx; y[5] = b9p0y; ty[5] = b9p0ty;
-      d[0] = (b2p0Ekin/fA)/K0 - 1.;
+      d[0] = (b2p0Ekin/fA)/K0 - 1.;// delta for [MeV/u] KE
+//      d[0] = b2p0Ekin/K0 - 1.;// delta for TKE
       Double_t K = 0.;
 
 
-      hxy2->Fill(1000.*x[0],1000.*y[0]); htxty2->Fill(1000.*tx[0],1000.*ty[0]);
-      hxy7o->Fill(1000.*x[3],1000.*y[3]); htxty7o->Fill(1000.*tx[3],1000.*ty[3]);
-      hxy9o->Fill(1000.*x[5],1000.*y[5]); htxty9o->Fill(1000.*tx[5],1000.*ty[5]);
+      hxy[0]->Fill(1000.*x[0],1000.*y[0]); htxty[0]->Fill(1000.*tx[0],1000.*ty[0]);
+      hxy[2]->Fill(1000.*x[3],1000.*y[3]); htxty[2]->Fill(1000.*tx[3],1000.*ty[3]);
+      hxy[4]->Fill(1000.*x[5],1000.*y[5]); htxty[4]->Fill(1000.*tx[5],1000.*ty[5]);
 
 
       /* Transform forward with full ion-optical matrix
@@ -245,11 +258,11 @@ void GeantTree::Loop()
       y[4] = y[1]+c2z*b[1]; ty[4]=ty[1];// angles don't change
 
 /*
-      hxy7->Fill(1000.*x[1],1000.*y[1]); htxty7->Fill(1000.*tx[1],1000.*ty[1]);
-      hxy9->Fill(1000.*x[4],1000.*y[4]); htxty9->Fill(1000.*tx[4],1000.*ty[4]);
+      hxy[1]->Fill(1000.*x[1],1000.*y[1]); htxty[1]->Fill(1000.*tx[1],1000.*ty[1]);
+      hxy[3]->Fill(1000.*x[4],1000.*y[4]); htxty[3]->Fill(1000.*tx[4],1000.*ty[4]);
 */
-      hxy7->Fill(1000.*foutput[0],1000.*foutput[2]); htxty7->Fill(1000.*tx[1],1000.*ty[1]);
-      hxy9->Fill(1000.*x[4],1000.*y[4]); htxty9->Fill(1000.*tx[4],1000.*ty[4]);
+      hxy[1]->Fill(1000.*foutput[0],1000.*foutput[2]); htxty[1]->Fill(1000.*tx[1],1000.*ty[1]);
+      hxy[3]->Fill(1000.*x[4],1000.*y[4]); htxty[3]->Fill(1000.*tx[4],1000.*ty[4]);
 
       /* Transform with partial inverse matrix
        * input is CRDC1 positions and angles
@@ -371,35 +384,35 @@ void GeantTree::Loop()
   
   TCanvas *c1 = new TCanvas("c1","c1",1000,500);
   c1->Divide(2,1);
-  c1->cd(1); hxy2->Draw("COLZ");
-  c1->cd(2); htxty2->Draw("COLZ");
+  c1->cd(1); hxy[0]->Draw("COLZ");
+  c1->cd(2); htxty[0]->Draw("COLZ");
 
   TCanvas *c7 = new TCanvas("c7","c7",1000,500);
   c7->Divide(2,1);
-  c7->cd(1); hxy7->Draw("COLZ");
-  c7->cd(2); htxty7->Draw("COLZ");
+  c7->cd(1); hxy[1]->Draw("COLZ");
+  c7->cd(2); htxty[1]->Draw("COLZ");
 
   TCanvas *c8 = new TCanvas("c8","c8",1000,500);
   c8->Divide(2,1);
-  c8->cd(1); hxy7o->Draw("COLZ");
-  c8->cd(2); htxty7o->Draw("COLZ");
+  c8->cd(1); hxy[2]->Draw("COLZ");
+  c8->cd(2); htxty[2]->Draw("COLZ");
 
   TCanvas *c9 = new TCanvas("c9","c9",1000,500);
   c9->Divide(2,1);
-  c9->cd(1); hxy9->Draw("COLZ");
-  c9->cd(2); htxty9->Draw("COLZ");
+  c9->cd(1); hxy[3]->Draw("COLZ");
+  c9->cd(2); htxty[3]->Draw("COLZ");
 
   TCanvas *c10 = new TCanvas("c10","c10",1000,500);
   c10->Divide(2,1);
-  c10->cd(1); hxy9o->Draw("COLZ");
-  c10->cd(2); htxty9o->Draw("COLZ");
+  c10->cd(1); hxy[4]->Draw("COLZ");
+  c10->cd(2); htxty[4]->Draw("COLZ");
 
   // KE and velocity
   TCanvas *c22 = new TCanvas("c22","c22",1000,500);
   c22->Divide(2,1);
   const Int_t hc[5] = {1,38,4,2,28};//{frag,b2n0,gn0,ToFfrag,PInvfrag}
   ModHistogram(h2n0ke,hc[1],2); ModHistogram(hgn0ke,hc[2],2);
-  ModHistogram(h2fke,hc[0],4);  ModHistogram(hfke,hc[3],2);
+  ModHistogram(h2fke,hc[0],4);  ModHistogram(hfke,hc[3],4);
   ModHistogram(hPfke,hc[4],2);  ModHistogram(hTrfke,hc[3],2);
   h2fke->SetLineStyle(2); hfke->SetLineStyle(2);
   TPaveText *csb[17];
