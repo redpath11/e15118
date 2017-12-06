@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////
 // This class has been automatically generated on
-// Tue Oct 24 12:39:51 2017 by ROOT version 5.34/32
-// from TTree t/Combined tree created from run-4171-00-lisa.root
-// found on file: run-4171-00-lisa-recal.root
+// Wed Nov 15 10:32:12 2017 by ROOT version 5.34/32
+// from TTree t/Combined tree created from run-0203-00-lisa.root
+// found on file: run-0203-lisa_15Nov2017.root
 //////////////////////////////////////////////////////////
 
 #ifndef MonaBar_h
@@ -12,16 +12,12 @@
 #include <TChain.h>
 #include <TFile.h>
 #include <TH2.h>
-#include <TF1.h>
-#include <TString.h>
 #include <TGraph.h>
-#include <TGraphErrors.h>
-#include <TBox.h>
-#include <TCanvas.h>
+#include <TString.h>
 #include <TColor.h>
+#include <TStyle.h>
+#include <TCanvas.h>
 #include <iostream>
-
-
 
 // Header file for the classes stored in the TTree if any.
 #include "/projects/e15118/n2analysis/src/./mona.hh"
@@ -40,13 +36,15 @@ public :
    TH2F *Rtq[18];
    TH2F *Ltq[18];
    TH1F *Xps[18];
-//   TH1F *Rhx[18];
+   TH1F *Htx[18];
+   TH2F *QTc[18];
 
    // Indv bars
    TH2F *rtq[18][16];
    TH2F *ltq[18][16];
    TH1F *xps[18][16];
-//   TH1F *rhx[18][16];
+   TH1F *htx[18][16];
+   TH2F *qtc[18][16];
 
    TCanvas *c0;
    TCanvas *c1;
@@ -74,6 +72,8 @@ public :
    Double_t        hit_v[10];
    Double_t        hit_ke[10];
    Double_t        hit_q[10];
+   Int_t           hit_wall[10];
+   Int_t           hit_bar[10];
    Double_t        x;
    Double_t        y;
    Double_t        z;
@@ -118,6 +118,8 @@ public :
    TBranch        *b_cal__mona_hit_v;   //!
    TBranch        *b_cal__mona_hit_ke;   //!
    TBranch        *b_cal__mona_hit_q;   //!
+   TBranch        *b_cal__mona_hit_wall;   //!
+   TBranch        *b_cal__mona_hit_bar;   //!
    TBranch        *b_cal__mona_x;   //!
    TBranch        *b_cal__mona_y;   //!
    TBranch        *b_cal__mona_z;   //!
@@ -151,9 +153,8 @@ public :
    virtual void     Loop();
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
-   void Plot();
-   void DrawLayers();
    void PlotLayer(int);
+   void PlotLayerSummary();
 };
 
 #endif
@@ -166,27 +167,31 @@ MonaBar::MonaBar(TTree *tree) : fChain(0)
    if (tree == 0) {
 
 #ifdef SINGLE_TREE
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("run-4171-00-lisa-recal.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("run-0203-lisa_15Nov2017.root");
       if (!f || !f->IsOpen()) {
-         f = new TFile("run-4173-00-lisa-mult8.root");
+         f = new TFile("run-0203-lisa_15Nov2017.root");
       }
       f->GetObject("t",tree);
 #else
   TChain *chain = new TChain("t","Cosmic");
   char buffer[512];
   runCount=0;
-  
-  sprintf(buffer,"/mnt/analysis/e15118/root_mona/run-0103-mona_24Oct2017.root");
-  cout << buffer << endl;
-  chain->Add(buffer);
-  sprintf(buffer,"/mnt/analysis/e15118/root_lisa/run-0203-lisa_24Oct2017.root");
-  cout << buffer << endl;
-  chain->Add(buffer);
   /*
-  sprintf(buffer,"/mnt/analysis/e15118/root_lisa/run-4173-00-lisa-mult8.root");
+  sprintf(buffer,"/mnt/analysis/e15118/root_mona/run-0103-mona_15Nov2017.root");
+  cout << buffer << endl;
+  chain->Add(buffer);
+  sprintf(buffer,"/mnt/analysis/e15118/root_lisa/run-0203-lisa_15Nov2017.root");
+  cout << buffer << endl;
+  chain->Add(buffer);
+  
+  sprintf(buffer,"/mnt/analysis/e15118/root_lisa/run-4173-00-lisa_15Nov2017.root");
   cout << buffer << endl;
   chain->Add(buffer);
   */
+  sprintf(buffer,"/mnt/analysis/e15118/playground/recal_F27_AllProducts.root");
+  cout << buffer << endl;
+  chain->Add(buffer);
+  
   tree = chain;
 
 #endif// SINGLE_TREE
@@ -254,6 +259,8 @@ void MonaBar::Init(TTree *tree)
    fChain->SetBranchAddress("hit.v[10]", hit_v, &b_cal__mona_hit_v);
    fChain->SetBranchAddress("hit.ke[10]", hit_ke, &b_cal__mona_hit_ke);
    fChain->SetBranchAddress("hit.q[10]", hit_q, &b_cal__mona_hit_q);
+   fChain->SetBranchAddress("hit.wall[10]", hit_wall, &b_cal__mona_hit_wall);
+   fChain->SetBranchAddress("hit.bar[10]", hit_bar, &b_cal__mona_hit_bar);
    fChain->SetBranchAddress("x", &x, &b_cal__mona_x);
    fChain->SetBranchAddress("y", &y, &b_cal__mona_y);
    fChain->SetBranchAddress("z", &z, &b_cal__mona_z);
@@ -284,6 +291,10 @@ void MonaBar::Init(TTree *tree)
    Float_t q1=-100.; Float_t q2=5000.;
    Int_t xBins=200;
    Float_t x1=-200.; Float_t x2 = 200.;
+   Int_t tcBins = 250;
+   Float_t tc1=0.; Float_t tc2 = 150.;
+   Int_t qcBins = 100;
+   Float_t qc1=0.; Float_t qc2 = 100.;
 
    layer[0] = "A";
    layer[1] = "B";
@@ -318,9 +329,13 @@ void MonaBar::Init(TTree *tree)
         Form("Layer %s Bar %i xpos;xpos [cm];Counts / %3.2f cm",
 	  layer[i],j,(x2-x1)/Double_t(xBins)),
 	xBins,x1,x2);
-
-//      rhx[i][j] = new TH1F(Form(),Form(),xBins,x1,x2);
-//      lhx[i][j] = new TH1F(Form(),Form(),xBinx,x1,x2);
+      // hit.x[0] - indv bars
+      htx[i][j] = new TH1F(Form("htx_%s_%i",layer[i],j),
+        Form("hit.x[0] %s%i;hit.x[0] [cm];Counts / %3.2f cm",layer[i],j,(x2-x1)/Double_t(xBins)),
+	xBins,x1,x2);
+      qtc[i][j] = new TH2F(Form("qtc_%s_%i",layer[i],j),
+        Form("Layer %s Bar %i qmean:tmean;tmean [ns];qmean [MeVee]",layer[i],j),
+	tcBins,tc1,tc2,qcBins,qc1,qc2);
      }
      // raw q vs. t plots - layer summaries
      Rtq[i] = new TH2F(Form("Rtq_%s",layer[i]),
@@ -333,6 +348,11 @@ void MonaBar::Init(TTree *tree)
      Xps[i] = new TH1F(Form("Lxp_%s",layer[i]),
        Form("Layer %s xpos;xpos [cm];Counts / %3.2f cm",layer[i],(x2-x1)/Double_t(xBins)),
        xBins,x1,x2);
+     Htx[i] = new TH1F(Form("Htx_%s",layer[i]),
+       Form("Layer %s hit.x[0];hit.x[0] [cm];Counts / %3.2f cm",layer[i],(x2-x1)/Double_t(xBins)),
+       xBins,x1,x2);
+     QTc[i] = new TH2F(Form("QTc_%s",layer[i]),
+       Form("Layer %s qmean : tmean;tmean [ns];qmean [??]",layer[i]),tcBins,tc1,tc2,qcBins,qc1,qc2);
    }
 
    Notify();
@@ -363,7 +383,7 @@ Int_t MonaBar::Cut(Long64_t entry)
 // returns -1 otherwise.
    return 1;
 }
-
-
 void palettea();
 #endif // #ifdef MonaBar_cxx
+
+
