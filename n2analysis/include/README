@@ -1,0 +1,30 @@
+| +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ |
+CRDC# calibration files are indexed 1,2: 1 = part 1 before
+venting the focal plane box; 2 = part 2 after venting
+	crdc#_gainmatch_slopes#.txt
+	crdc#_ped_values#_e15118.txt
+
+HOPE TDC calibrations are currently used
+
+mona(lisa)_locations.hh have been updated with the results of
+the survey conducted by Dave Sanderson on 30 October 2017
+
+lisaMeans.out contains the means of the neutron x positions for
+bars with > 300 counts. These values are used to force these
+distributions to 0 by adding an offset to the bar x location
+
+mona_variables.hh contains all the include statments needed to
+pass calibration settings and locations to the source code. This
+is also where the global tmean offsets are set.
+
+sweeper_variables (two versions, before and after venting)
+contains include statements and calibration parameters needed
+by the sweeper section of the source code.
+	part#_sweeper_variables.hh (#=1, before venting; #=2
+	after venting)
+
+tmean_offsets.h contains the individual tmean offsets for each
+bar. Currently used are the NSCL offsets calculated from a
+single cosmic run. There is also a version from HOPE that used
+the paddle runs to extract individual tmean offset.
+| +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ |

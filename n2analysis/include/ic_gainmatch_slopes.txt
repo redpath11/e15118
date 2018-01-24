@@ -1,0 +1,16 @@
+ic.slope[0] = 1;
+ic.slope[1] = 0.761052;
+ic.slope[2] = 1.04311;
+ic.slope[3] = 0.875263;
+ic.slope[4] = 1;
+ic.slope[5] = 0.880492;
+ic.slope[6] = 1.09273;
+ic.slope[7] = 1;
+ic.slope[8] = 1.08117;
+ic.slope[9] = 1.10327;
+ic.slope[10] = 1.03951;
+ic.slope[11] = 1.19563;
+ic.slope[12] = 1.00001;
+ic.slope[13] = 1.06196;
+ic.slope[14] = 1.03434;
+ic.slope[15] = 1;
