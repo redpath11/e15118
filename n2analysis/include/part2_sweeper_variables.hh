@@ -290,7 +290,8 @@ crdc2.y_offset = 127.35;// from r3016 - 6/30/2016
 /* Part 2 */
 crdc2.x_offset = 186.896;
 crdc2.y_slope = -0.07371;// from r3161 - 10/12/2016
-crdc2.y_offset = 124.700;// from r3161 - 10/12/2016
+crdc2.y_offset = 124.700-19.3867;// from r3161 - 10/12/2016
+// offset to make the beam y=0 (ignore mask offset)
 
 
 //crdc2.x_offset = 0.0;
