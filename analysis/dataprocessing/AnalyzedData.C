@@ -24,6 +24,7 @@
 //
 
 #include "AnalyzedData.h"
+#include <TVector3.h>
 
 
 void AnalyzedData::Begin(TTree *tree)
@@ -57,14 +58,15 @@ void AnalyzedData::Begin(TTree *tree)
   
 //  SetFragment("unr");
 //  SetFragment("F27");
-//  SetFragment("O24");
+  SetFragment("O24");
 //  SetFragment("O23");
-  SetFragment("O22");
+//  SetFragment("O22");
   GraphicalCuts();
 
-  outFile = new TFile(
-    Form("/mnt/analysis/e15118/analyzed/%s%s_tshift1.0ns_THLDfixLISAxpos.root",m_beam.Data(),m_fragment.Data()),
-    "RECREATE");
+  TString outFilename = Form("/mnt/analysis/e15118/analyzed/%s%s_tshift1.0ns_THLDfixLISAxpos_qThres_2gTest.root",
+    m_beam.Data(),m_fragment.Data());
+  outFile = new TFile(outFilename,"RECREATE");
+  cout << "Analyzed tree will be written to " << outFilename.Data() << endl;
 
   InitAnalyzedTree();
 
@@ -202,19 +204,34 @@ if(hit_t[0]!=-1){// valid neutron time
   else{target=9;}
 
 
-  /* Reconstruct neutron */
-  n0.x            = hit_x[0];
-  n0.y            = hit_y[0];
-  n0.z            = hit_z[0] + zshift;
-  n0.dist         = sqrt(hit_x[0]*hit_x[0]+hit_y[0]*hit_y[0]+n0.z*n0.z);
-  n0.t            = hit_t[0] + tshift;
-  n0.v            = n0.dist / n0.t;
-  n0.beta         = n0.v / C;
-  n0.gamma        = 1. / sqrt(1. - n0.beta*n0.beta);
-  n0.cosTheta     = (n0.z) / n0.dist;
-  n0.P            = (nMamu) * n0.beta * n0.gamma;
-  n0.E            = (nMamu) * n0.gamma;
-  n0.light        = hit_q[0];
+  /* Reconstruct neutrons */
+  g0.x            = hit_x[0];
+  g0.y            = hit_y[0];
+  g0.z            = hit_z[0] + zshift;
+  g0.dist         = sqrt(hit_x[0]*hit_x[0]+hit_y[0]*hit_y[0]+g0.z*g0.z);
+  g0.t            = hit_t[0] + tshift;
+  g0.v            = g0.dist / g0.t;
+  g0.beta         = g0.v / C;
+  g0.gamma        = 1. / sqrt(1. - g0.beta*g0.beta);
+  g0.cosTheta     = (g0.z) / g0.dist;
+  g0.P            = (nMamu) * g0.beta * g0.gamma;
+  g0.E            = (nMamu) * g0.gamma;
+  g0.light        = hit_q[0];
+
+  if(hit_t[1]!=-1){
+  g1.x            = hit_x[1];
+  g1.y            = hit_y[1];
+  g1.z            = hit_z[1] + zshift;
+  g1.dist         = sqrt(hit_x[1]*hit_x[1]+hit_y[1]*hit_y[1]+g1.z*g1.z);
+  g1.t            = hit_t[1] + tshift;
+  g1.v            = g1.dist / g1.t;
+  g1.beta         = g1.v / C;
+  g1.gamma        = 1. / sqrt(1. - g1.beta*g1.beta);
+  g1.cosTheta     = (g1.z) / g1.dist;
+  g1.P            = (nMamu) * g1.beta * g1.gamma;
+  g1.E            = (nMamu) * g1.gamma;
+  g1.light        = hit_q[1];
+  }
 
   /* Reconstruct fragment from dist / tof */
   frag.beta0    = frag.v0 / C;
@@ -228,9 +245,22 @@ if(hit_t[0]!=-1){// valid neutron time
   frag.E        = fragA*frag.gamma;
 
   /* Two-body decay energy */
-  edecay = fragA*fragA + nMamu*nMamu + 2.*(frag.E*n0.E - frag.P*n0.P*n0.cosTheta);
-  edecay = sqrt(edecay) - fragA - nMamu;
-  edecay *= amuM;
+  g0edecay = fragA*fragA + nMamu*nMamu + 2.*(frag.E*g0.E - frag.P*g0.P*g0.cosTheta);
+  g0edecay = sqrt(g0edecay) - fragA - nMamu;
+  g0edecay *= amuM;
+
+  g1edecay = fragA*fragA + nMamu*nMamu + 2.*(frag.E*g1.E - frag.P*g1.P*g1.cosTheta);
+  g1edecay = sqrt(g1edecay) - fragA - nMamu;
+  g1edecay *= amuM;
+
+  /* Three-body decay energy */
+  ThreeBodyEdecay = fragA*fragA + 2.*nMamu*nMamu;
+  ThreeBodyEdecay+= 2.*(frag.E*g0.E + frag.E*g1.E + g0.E*g1.E);
+  ThreeBodyEdecay-= 2.*(frag.P*g0.P*g0.cosTheta + frag.P*g1.P*g1.cosTheta + NNdot(g0,g1));
+  if(ThreeBodyEdecay>0 && target<=3 && KEaddback>0 && g0.t>0 && g1.t>0){
+    ThreeBodyEdecay = sqrt(ThreeBodyEdecay) - fragA - (2.*nMamu);
+    ThreeBodyEdecay*= amuM;
+  }
 }// valid neutron time
 
   at->Fill();
@@ -279,16 +309,18 @@ void AnalyzedData::Reset(){
     si_y[i]=-1.;
   }
 
-  frag.dist=-1.;
-  frag.beta0=-1.;
-  frag.gamma0=-1.;
-  frag.v0=-1.;
-  frag.Bp=-1.;
-  frag.beta=-1.;
-  frag.gamma=-1.;
-  frag.v=-1.;
-  frag.E=-1.;
-  frag.P=-1.;
+  frag.dist=-1;
+  frag.beta0=-1;
+  frag.gamma0=-1;
+  frag.v0=-1;
+  frag.ke0=-1;
+  frag.Bp=-1;
+  frag.beta=-1;
+  frag.gamma=-1;
+  frag.v=-1;
+  frag.ke=-1;
+  frag.E=-1;
+  frag.P=-1;
 
   frag_bp.dist=-1.;
   frag_bp.beta0=-1.;
@@ -301,21 +333,21 @@ void AnalyzedData::Reset(){
   frag_bp.E=-1.;
   frag_bp.P=-1.;
 
-  n0.x=-1.;
-  n0.y=-1.;
-  n0.z=-1.;
-  n0.dist=-1.;
-  n0.t=-1.;
-  n0.v=-1.;
-  n0.beta=-1.;
-  n0.gamma=-1.;
-  n0.cosTheta=-1.;
-  n0.E=-1.;
-  n0.P=-1.;
+  ResetHit(g0); ResetHit(g1);
 
-  edecay=-1.;
+  g0edecay=-1.;
+  g1edecay=-1.;
+  ThreeBodyEdecay=-1.;
   target=9;
 
+}
+
+
+Double_t NNdot(NEUTRON n1,NEUTRON n2){
+  TVector3 v1,v2;
+  v1.SetXYZ(n1.x,n1.y,n1.z); v1.SetMag(n1.P);
+  v2.SetXYZ(n2.x,n2.y,n2.z); v2.SetMag(n2.P);
+  return v1.Dot(v2);
 }
 
 

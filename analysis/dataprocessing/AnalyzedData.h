@@ -75,13 +75,15 @@ public :
   CRDC crdc1;
   CRDC crdc2;
   THIN thin;
-  NEUTRON n0;
+  NEUTRON g0,g1;
   FRAGMENT frag;
   FRAGMENT frag_bp;
   TOF tof;
 
   UShort_t target;
-  Double_t edecay;
+  Double_t g0edecay;
+  Double_t g1edecay;
+  Double_t ThreeBodyEdecay;
 
   /* uncooperative variables 
   // tof branch
@@ -787,11 +789,14 @@ void AnalyzedData::InitAnalyzedTree(){
   at->Branch("crdc2",&crdc2,"x/D:y:tx:ty:path");
   at->Branch("thin",&thin,"x/D:y");
   at->Branch("mult",&mult);
-  at->Branch("n0",&n0,"x/D:y:z:t:dist:cosTheta:v:beta:gamma:E:P:light");
+  at->Branch("g0",&g0,"x/D:y:z:t:dist:cosTheta:v:beta:gamma:E:P:light");
+  at->Branch("g1",&g1,"x/D:y:z:t:dist:cosTheta:v:beta:gamma:E:P:light");
   at->Branch("frag",&frag,"dist/D:beta0/D:gamma0:v0:ke0:Bp:beta:gamma:v:ke:E:P");
 //  at->Branch("tof",&tof,"nfired/s:un/D:pt/D:frag/D:q[4]/D:qx[4]/D:qxy[4]/D");
   at->Branch("target",&target);
-  at->Branch("edecay",&edecay);
+  at->Branch("g0edecay",&g0edecay);
+  at->Branch("g1edecay",&g1edecay);
+  at->Branch("ThreeBodyEdecay",&ThreeBodyEdecay);
 
   /* tof branch*/
   at->Branch("tof.nfired", &tof.nfired,"tof.nfired/s");
@@ -824,3 +829,20 @@ inline Double_t FirstPol(double,double,double);
 inline Double_t ThirdPol(double,double,double,double,double);
 inline Double_t Distance(double);
 
+void ResetHit(NEUTRON &n){
+  n.x=-1;
+  n.y=-1;
+  n.z=-1;
+  n.t=-1;
+  n.dist=-1;
+  n.cosTheta=-1;
+  n.v=-1;
+  n.beta=-1;
+  n.gamma=-1;
+  n.E=-1;
+  n.P=-1;
+  n.light=-1;
+}
+
+
+Double_t NNdot(NEUTRON n1,NEUTRON n2);
